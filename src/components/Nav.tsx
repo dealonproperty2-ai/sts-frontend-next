@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from './Logo';
 import Icon from './Icon';
+import { useTheme } from './ThemeProvider';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home' },
@@ -19,6 +20,7 @@ export default function Nav() {
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const { theme, toggle } = useTheme();
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -104,6 +106,24 @@ export default function Nav() {
           >
             Start project <Icon name="arrow" size={14} />
           </Link>
+          <button
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              width: 40,
+              height: 40,
+              border: '1px solid var(--line-strong)',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--fg-2)',
+              transition: 'border-color var(--t-fast), color var(--t-fast)',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+          </button>
           <button
             className="nav-mobile-toggle"
             onClick={() => setOpen(!open)}

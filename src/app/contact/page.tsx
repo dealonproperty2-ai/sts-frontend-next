@@ -20,8 +20,8 @@ const contactJsonLd = {
   url: `${SITE_URL}/contact`,
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: '+91-9999988888',
-    email: 'hello@steptosoft.com',
+    telephone: '+91-3413556956',
+    email: 'info@steptosoft.com',
     contactType: 'sales',
     areaServed: 'Worldwide',
     availableLanguage: ['en', 'hi', 'bn'],
@@ -36,9 +36,9 @@ interface CardItem {
 }
 
 const CARDS: CardItem[] = [
-  { icon: 'mail', label: 'Email', value: 'hello@steptosoft.com', sub: 'Mon–Fri · <1d response' },
-  { icon: 'phone', label: 'Phone', value: '+91 99999 88888', sub: '10:00–19:00 IST' },
-  { icon: 'pin', label: 'Studio', value: 'Asansol, West Bengal', sub: 'India · Remote-friendly' },
+  { icon: 'mail', label: 'Email', value: 'info@steptosoft.com', sub: 'Mon–Fri · <1d response' },
+  { icon: 'phone', label: 'Phone', value: '+91-3413556956', sub: '10:00–19:00 IST' },
+  { icon: 'pin', label: 'Studio', value: 'Module-21, Asansol webel IT Park, Asansol-713304, West Bengal, INDIA', sub: 'India · Remote-friendly' },
 ];
 
 export default function ContactPage() {

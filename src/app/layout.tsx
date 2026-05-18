@@ -4,6 +4,8 @@ import Script from 'next/script';
 import '../styles/globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import { ThemeScript } from '@/components/ThemeScript';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -148,8 +150,12 @@ export default function RootLayout({
       lang="en"
       data-theme="dark"
       data-card-style="glass"
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${jetBrainsMono.variable}`}
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body>
         <Script
           id="ld-org"
@@ -176,9 +182,11 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <Nav />
-        <main id="main">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <Nav />
+          <main id="main">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

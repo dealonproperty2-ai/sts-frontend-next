@@ -68,22 +68,29 @@ export default function AboutPage() {
             <TiltCard max={5}>
               <div className="card ticked" style={{ padding: 0, overflow: 'hidden' }}>
                 <CornerTicks />
-                <div
-                  style={{
-                    aspectRatio: '4/3',
-                    background:
-                      'repeating-linear-gradient(135deg, var(--bg-2) 0 12px, var(--bg-3) 12px 24px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--fg-3)',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: 11,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  STUDIO · ASANSOL HQ
+                <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
+                  <Image
+                    src="/asansol-hq.jpg"
+                    alt="Step To Soft studio — Asansol HQ"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="(max-width: 980px) 100vw, 50vw"
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 12,
+                      left: 14,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: '#fff',
+                      textShadow: '0 1px 6px rgba(0,0,0,0.7)',
+                    }}
+                  >
+                    STUDIO · ASANSOL HQ
+                  </div>
                 </div>
               </div>
             </TiltCard>
