@@ -179,7 +179,7 @@ export default function CourseDetailPage({ params }: Params) {
                             letterSpacing: '-0.03em',
                           }}
                         >
-                          0{i + 1}
+                          {String(i + 1).padStart(2, '0')}
                         </div>
                         <div>
                           <div

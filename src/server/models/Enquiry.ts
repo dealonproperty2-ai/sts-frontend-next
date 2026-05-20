@@ -9,7 +9,7 @@ const EnquirySchema = new Schema(
     service: { type: String, default: null },
     budget: { type: String, default: null },
     message: { type: String, required: true },
-    status: { type: String, default: 'N' },
+    status: { type: String, default: 'new' },
     sourceIp: { type: String, default: null },
     userAgent: { type: String, default: null },
   },

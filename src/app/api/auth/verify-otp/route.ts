@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { connectDb } from '@/server/db';
 import Otp from '@/server/models/Otp';
+import User from '@/server/models/User';
 import { clean } from '@/server/validation';
 import { clientKey, rateLimit } from '@/server/rateLimit';
 
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
   const otp = clean(body.otp, 10);
 
   if (!target || !otp) {
-    return NextResponse.json({ error: 'target and otp required' }, { status: 400 });
+    return NextResponse.json({ error: 'target and otp are required' }, { status: 400 });
   }
 
   const secret = process.env.JWT_SECRET;
@@ -33,14 +35,50 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
-  await connectDb();
-  const found = await Otp.findOne({ target, purpose: 'login' });
-  if (!found || found.otp !== otp || (found.expiresAt && found.expiresAt < new Date())) {
-    return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 });
+  try {
+    await connectDb();
+  } catch (err) {
+    console.error('[verify-otp] db error', err);
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
   }
 
-  await Otp.deleteOne({ _id: (found as { _id: unknown })._id });
+  try {
+    const found = await Otp.findOne({ target, purpose: 'login' });
+    const expired = found?.expiresAt && found.expiresAt < new Date();
+    const otpMatch = found
+      ? timingSafeEqual(Buffer.from(found.otp), Buffer.from(otp.padEnd(found.otp.length)))
+        && found.otp.length === otp.length
+      : false;
+    if (!found || !otpMatch || expired) {
+      return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 });
+    }
 
-  const token = jwt.sign({ target }, secret, { expiresIn: '7d' });
-  return NextResponse.json({ message: 'Verified', token });
+    await Otp.deleteOne({ _id: found._id });
+
+    const user = await User.findOne({
+      $or: [{ email: target }, { phone: target }],
+    });
+
+    let tokenPayload: Record<string, unknown>;
+    let responseUser: Record<string, unknown> | null = null;
+
+    if (user && user.isActive) {
+      tokenPayload = { id: user._id.toString(), role: user.role };
+      responseUser = {
+        _id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+    } else {
+      tokenPayload = { target, role: 'user' };
+    }
+
+    const token = jwt.sign(tokenPayload, secret, { expiresIn: '7d' });
+
+    return NextResponse.json({ success: true, message: 'Verified', token, user: responseUser });
+  } catch (err) {
+    console.error('[verify-otp] error', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
 }

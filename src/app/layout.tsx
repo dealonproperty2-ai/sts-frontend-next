@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import '../styles/globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
@@ -57,14 +58,7 @@ export const metadata: Metadata = {
     title: 'Step To Soft — Software Engineering, Consulting & Outsourcing',
     description:
       'Custom software, SaaS engineering & dedicated developer pods. Built in Asansol, shipping worldwide since 2018.',
-    images: [
-      {
-        url: '/og.png',
-        width: 1200,
-        height: 630,
-        alt: 'Step To Soft — Software studio',
-      },
-    ],
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Step To Soft — Software studio' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -76,19 +70,10 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
-    ],
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }, { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' }],
     shortcut: '/favicon.svg',
     apple: '/icon.svg',
   },
@@ -114,18 +99,9 @@ const orgJsonLd = {
   foundingDate: '2018',
   email: 'hello@steptosoft.com',
   telephone: '+91-9999988888',
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'Asansol',
-    addressRegion: 'West Bengal',
-    addressCountry: 'IN',
-  },
-  sameAs: [
-    'https://www.linkedin.com/company/steptosoft',
-    'https://github.com/steptosoft',
-  ],
-  description:
-    'A 25-engineer product studio offering custom software development, SaaS engineering, dedicated developer pods, and a full-stack web bootcamp.',
+  address: { '@type': 'PostalAddress', addressLocality: 'Asansol', addressRegion: 'West Bengal', addressCountry: 'IN' },
+  sameAs: ['https://www.linkedin.com/company/steptosoft', 'https://github.com/steptosoft'],
+  description: 'A 25-engineer product studio offering custom software development, SaaS engineering, dedicated developer pods, and a full-stack web bootcamp.',
 };
 
 const websiteJsonLd = {
@@ -133,23 +109,17 @@ const websiteJsonLd = {
   '@type': 'WebSite',
   url: SITE_URL,
   name: 'Step To Soft',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: `${SITE_URL}/courses?q={search_term_string}`,
-    'query-input': 'required name=search_term_string',
-  },
+  potentialAction: { '@type': 'SearchAction', target: `${SITE_URL}/courses?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = headers();
+  const isAdmin = (headersList.get('x-pathname') ?? '').startsWith('/admin');
+
   return (
     <html
       lang="en"
       data-theme="dark"
-      data-card-style="glass"
       suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${jetBrainsMono.variable}`}
     >
@@ -157,36 +127,25 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body>
-        <Script
-          id="ld-org"
-          type="application/ld+json"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-        />
-        <Script
-          id="ld-website"
-          type="application/ld+json"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-        <a
-          href="#main"
-          style={{
-            position: 'absolute',
-            left: -9999,
-            top: 'auto',
-            width: 1,
-            height: 1,
-            overflow: 'hidden',
-          }}
-        >
-          Skip to content
-        </a>
-        <ThemeProvider>
-          <Nav />
-          <main id="main">{children}</main>
-          <Footer />
-        </ThemeProvider>
+        {isAdmin ? (
+          children
+        ) : (
+          <>
+            <Script id="ld-org" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+            <Script id="ld-website" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+            <a
+              href="#main"
+              style={{ position: 'absolute', left: -9999, top: 'auto', width: 1, height: 1, overflow: 'hidden' }}
+            >
+              Skip to content
+            </a>
+            <ThemeProvider>
+              <Nav />
+              <main id="main">{children}</main>
+              <Footer />
+            </ThemeProvider>
+          </>
+        )}
       </body>
     </html>
   );

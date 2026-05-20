@@ -31,7 +31,11 @@ const COLS: { title: string; links: [string, string][] }[] = [
   },
 ];
 
-const SOCIAL: IconName[] = ['github', 'linkedin', 'mail'];
+const SOCIAL: { icon: IconName; label: string; href: string }[] = [
+  { icon: 'github',   label: 'Step To Soft on GitHub',   href: 'https://github.com/steptosoft' },
+  { icon: 'linkedin', label: 'Step To Soft on LinkedIn', href: 'https://www.linkedin.com/company/steptosoft' },
+  { icon: 'mail',     label: 'Email Step To Soft',       href: 'mailto:hello@steptosoft.com' },
+];
 
 export default function Footer() {
   return (
@@ -53,11 +57,13 @@ export default function Footer() {
               worldwide since 2018.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              {SOCIAL.map((i) => (
+              {SOCIAL.map((s) => (
                 <a
-                  key={i}
-                  href="#"
-                  aria-label={i}
+                  key={s.icon}
+                  href={s.href}
+                  aria-label={s.label}
+                  target={s.href.startsWith('http') ? '_blank' : undefined}
+                  rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   style={{
                     width: 36,
                     height: 36,
@@ -70,7 +76,7 @@ export default function Footer() {
                     transition: 'all var(--t-fast)',
                   }}
                 >
-                  <Icon name={i} size={15} />
+                  <Icon name={s.icon} size={15} />
                 </a>
               ))}
             </div>
@@ -143,19 +149,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <style>{`
-        .footer-grid {
-          display: grid;
-          grid-template-columns: 1.4fr 1fr 1fr 1fr;
-          gap: 48px;
-        }
-        @media (max-width: 860px) {
-          .footer-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 520px) {
-          .footer-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </footer>
   );
 }

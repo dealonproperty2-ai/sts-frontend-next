@@ -10,13 +10,15 @@ interface ThemeCtx {
 
 const ThemeContext = React.createContext<ThemeCtx>({ theme: 'dark', toggle: () => {} });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = React.useState<Theme>('dark');
+function readTheme(): Theme {
+  if (typeof document === 'undefined') return 'dark';
+  const t = document.documentElement.getAttribute('data-theme');
+  return t === 'light' ? 'light' : 'dark';
+}
 
-  React.useEffect(() => {
-    const current = document.documentElement.getAttribute('data-theme') as Theme;
-    if (current === 'light' || current === 'dark') setTheme(current);
-  }, []);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Lazy initialiser reads the value already set by ThemeScript — no flash
+  const [theme, setTheme] = React.useState<Theme>(readTheme);
 
   const toggle = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';

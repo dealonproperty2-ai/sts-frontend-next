@@ -9,6 +9,7 @@ const ApplicationSchema = new Schema(
     portfolio: { type: String, default: '' },
     message: { type: String, default: '' },
     status: { type: String, default: 'new' },
+    adminNotes: { type: String, default: '' },
     sourceIp: { type: String, default: null },
     userAgent: { type: String, default: null },
   },

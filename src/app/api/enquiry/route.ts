@@ -13,7 +13,10 @@ export async function POST(req: Request) {
   if (!rl.ok) {
     return NextResponse.json(
       { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
     );
   }
 
@@ -42,21 +45,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Message is required' }, { status: 400 });
   }
 
+  if (!process.env.MONGODB_URI) {
+    console.error('[enquiry] MONGODB_URI is not set — create .env.local');
+    return NextResponse.json(
+      { success: false, error: 'Server is not configured. Please contact support.' },
+      { status: 503 }
+    );
+  }
+
   try {
     await connectDb();
     const sourceIp = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || null;
     const userAgent = req.headers.get('user-agent') || null;
-    await Enquiry.create({
-      name,
-      email,
-      phone,
-      country,
-      service,
-      budget,
-      message,
-      sourceIp,
-      userAgent,
-    });
+    await Enquiry.create({ name, email, phone, country, service, budget, message, sourceIp, userAgent });
   } catch (err) {
     console.error('[enquiry] db error', err);
     return NextResponse.json(
@@ -65,11 +66,9 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    await sendEnquiryMails({ name, email, phone, country, service, budget, message });
-  } catch (err) {
-    console.error('[enquiry] mail error', err);
-  }
+  sendEnquiryMails({ name, email, phone, country, service, budget, message }).catch((err) =>
+    console.error('[enquiry] mail error', err)
+  );
 
   return NextResponse.json({ success: true, message: 'Enquiry received' });
 }

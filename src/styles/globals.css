@@ -584,3 +584,27 @@ label.field-label {
     grid-template-columns: 1fr;
   }
 }
+
+/* Footer grid */
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+@media (max-width: 860px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .footer-grid { grid-template-columns: 1fr; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .marquee { animation: none; }
+  .page-enter { animation: none; opacity: 1; }
+  .float-card { animation: none; }
+}
+
+/* Remove persistent GPU layer promotion from float-cards */
+.float-card { will-change: auto; }

@@ -22,7 +22,11 @@ export async function connectDb() {
         bufferCommands: false,
         serverSelectionTimeoutMS: 8000,
       })
-      .then((m) => m);
+      .then((m) => m)
+      .catch((err) => {
+        cached.promise = null; // allow retry on next request
+        throw err;
+      });
   }
 
   cached.conn = await cached.promise;

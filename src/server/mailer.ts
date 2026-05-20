@@ -87,7 +87,7 @@ export async function sendApplicationMails(p: {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const html = `
+  const adminHtml = `
     <h2>New application</h2>
     <p><b>Name:</b> ${escapeHtml(p.name)}</p>
     <p><b>Email:</b> ${escapeHtml(p.email)}</p>
@@ -98,12 +98,48 @@ export async function sendApplicationMails(p: {
     <p style="white-space:pre-wrap">${escapeHtml(p.message ?? '')}</p>
   `;
 
+  const confirmHtml = `
+    <p>Hi ${escapeHtml(p.name)},</p>
+    <p>Thanks for applying to Step To Soft! We've received your application${p.role ? ` for <b>${escapeHtml(p.role)}</b>` : ''} and will get back to you within 2–3 business days.</p>
+    <p>— Step To Soft Team</p>
+  `;
+
+  const from = process.env.SMTP_USER!;
+
   await t.sendMail({
-    from: process.env.SMTP_USER!,
+    from,
     to: adminTo,
     subject: `[STS] New application — ${p.name} · ${p.role}`,
-    html,
+    html: adminHtml,
     replyTo: p.email,
+  });
+
+  await t.sendMail({
+    from,
+    to: p.email,
+    subject: 'Your application to Step To Soft',
+    html: confirmHtml,
+  });
+
+  return { sent: true as const };
+}
+
+export async function sendOtpMail(email: string, otp: string) {
+  const t = getTransporter();
+  if (!t) return { sent: false, reason: 'smtp-not-configured' as const };
+
+  const html = `
+    <p>Your Step To Soft verification code is:</p>
+    <h1 style="letter-spacing:0.2em">${escapeHtml(otp)}</h1>
+    <p>This code expires in 10 minutes. Do not share it with anyone.</p>
+    <p>— Step To Soft</p>
+  `;
+
+  await t.sendMail({
+    from: process.env.SMTP_USER!,
+    to: email,
+    subject: 'Your Step To Soft OTP',
+    html,
   });
 
   return { sent: true as const };

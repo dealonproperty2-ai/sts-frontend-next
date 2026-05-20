@@ -6,12 +6,23 @@ const STORE: Map<string, Bucket> = (() => {
   return g.__rateStore;
 })();
 
+function evictExpired() {
+  const now = Date.now();
+  STORE.forEach((b, k) => { if (b.resetAt < now) STORE.delete(k); });
+}
+
+let _lastEvict = 0;
+
 export function rateLimit(
   key: string,
   limit: number,
   windowMs: number
 ): { ok: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
+
+  // Evict expired entries at most once per minute to prevent memory growth
+  if (now - _lastEvict > 60_000) { evictExpired(); _lastEvict = now; }
+
   const b = STORE.get(key);
   if (!b || b.resetAt < now) {
     const fresh = { count: 1, resetAt: now + windowMs };

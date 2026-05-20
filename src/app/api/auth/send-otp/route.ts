@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { randomInt } from 'crypto';
 import { connectDb } from '@/server/db';
 import Otp from '@/server/models/Otp';
-import { clean } from '@/server/validation';
+import { sendOtpMail } from '@/server/mailer';
+import { clean, isEmail } from '@/server/validation';
 import { clientKey, rateLimit } from '@/server/rateLimit';
 
 export const runtime = 'nodejs';
@@ -25,20 +27,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'mobile or email is required' }, { status: 400 });
   }
 
-  // Dev OTP: fixed 123456 (matches legacy backend behavior).
-  // In production, generate cryptographically and dispatch via SMS/email.
-  const otp = process.env.NODE_ENV === 'production'
-    ? String(Math.floor(100000 + Math.random() * 900000))
-    : '123456';
+  const otp =
+    process.env.NODE_ENV === 'production'
+      ? String(randomInt(100000, 1000000))
+      : '123456';
 
-  await connectDb();
-  await Otp.findOneAndUpdate(
-    { target, purpose: 'login' },
-    { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
-    { upsert: true }
-  );
+  try {
+    await connectDb();
+    await Otp.findOneAndUpdate(
+      { target, purpose: 'login' },
+      { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error('[send-otp] db error', err);
+    return NextResponse.json({ error: 'Could not process request' }, { status: 500 });
+  }
 
-  // Only return the OTP in non-production for testing
+  if (process.env.NODE_ENV === 'production' && isEmail(target)) {
+    sendOtpMail(target, otp).catch((err) => console.error('[send-otp] mail error', err));
+  }
+
   return NextResponse.json({
     message: 'OTP sent',
     ...(process.env.NODE_ENV !== 'production' ? { otp } : {}),

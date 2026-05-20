@@ -22,6 +22,9 @@ export default function CareersForm({ roles }: Props) {
   });
   const [status, setStatus] = React.useState<Status>('idle');
   const [errMsg, setErrMsg] = React.useState('');
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -37,10 +40,10 @@ export default function CareersForm({ roles }: Props) {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Submission failed');
+      if (!res.ok || !data.success) throw new Error(data.error || data.message || 'Submission failed');
       setStatus('sent');
       setForm({ name: '', email: '', phone: '', role: '', portfolio: '', message: '' });
-      setTimeout(() => setStatus('idle'), 6000);
+      timerRef.current = setTimeout(() => setStatus('idle'), 6000);
     } catch (err) {
       setStatus('error');
       setErrMsg(err instanceof Error ? err.message : 'Something went wrong');

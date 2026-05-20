@@ -33,21 +33,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
-  await connectDb();
-  const user = await User.findOne({ email });
-  if (!user) {
-    return NextResponse.json({ error: 'Email or password is incorrect' }, { status: 401 });
-  }
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) {
-    return NextResponse.json({ error: 'Email or password is incorrect' }, { status: 401 });
+  try {
+    await connectDb();
+  } catch (err) {
+    console.error('[login] db error', err);
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
   }
 
-  const token = jwt.sign({ id: user._id.toString(), role: user.role }, secret, { expiresIn: '1h' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return NextResponse.json({ error: 'Email or password is incorrect' }, { status: 401 });
+    }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return NextResponse.json({ error: 'Email or password is incorrect' }, { status: 401 });
+    }
+    if (!user.isActive) {
+      return NextResponse.json({ error: 'Account is disabled' }, { status: 403 });
+    }
 
-  return NextResponse.json({
-    success: true,
-    token,
-    user: { _id: user._id.toString(), email: user.email, role: user.role },
-  });
+    const token = jwt.sign(
+      { id: user._id.toString(), role: user.role },
+      secret,
+      { expiresIn: '8h' }
+    );
+
+    return NextResponse.json({
+      success: true,
+      token,
+      user: { _id: user._id.toString(), email: user.email, name: user.name, role: user.role },
+    });
+  } catch (err) {
+    console.error('[login] error', err);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
 }

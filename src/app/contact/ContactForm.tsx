@@ -19,6 +19,9 @@ export default function ContactForm() {
   });
   const [status, setStatus] = React.useState<Status>('idle');
   const [errMsg, setErrMsg] = React.useState('');
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const upd = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -37,7 +40,7 @@ export default function ContactForm() {
       if (!res.ok || !data.success) throw new Error(data.message || data.error || 'Failed to send');
       setStatus('sent');
       setForm({ name: '', email: '', phone: '', country: '', service: '', budget: '', message: '' });
-      setTimeout(() => setStatus('idle'), 6000);
+      timerRef.current = setTimeout(() => setStatus('idle'), 6000);
     } catch (err) {
       setStatus('error');
       setErrMsg(err instanceof Error ? err.message : 'Something went wrong');
