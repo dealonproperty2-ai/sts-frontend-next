@@ -22,14 +22,17 @@ const adminLayoutStyle = `
 `;
 
 const NAV = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: '⊞' },
-  { href: '/admin/applications', label: 'Applications', icon: '◎' },
-  { href: '/admin/enquiries', label: 'Enquiries', icon: '◈' },
-  { href: '/admin/courses', label: 'Courses', icon: '◧' },
-  { href: '/admin/users', label: 'Users', icon: '◉' },
-  { href: '/admin/bills', label: 'Office Bills', icon: '◑' },
-  { href: '/admin/audit-logs', label: 'Audit Logs', icon: '◐' },
-  { href: '/admin/settings', label: 'Settings', icon: '◫' },
+  { href: '/admin/dashboard',            label: 'Dashboard',           icon: '⊞', group: '' },
+  { href: '/admin/applications',         label: 'Applications',        icon: '◎', group: '' },
+  { href: '/admin/enquiries',            label: 'Enquiries',           icon: '◈', group: '' },
+  { href: '/admin/courses',              label: 'Courses',             icon: '◧', group: '' },
+  { href: '/admin/users',               label: 'Users',               icon: '◉', group: '' },
+  { href: '/admin/bills',               label: 'Office Bills',        icon: '◑', group: '' },
+  { href: '/admin/employees',            label: 'Employees',           icon: '◍', group: 'HR' },
+  { href: '/admin/payslips',            label: 'Payslips',            icon: '◰', group: 'HR' },
+  { href: '/admin/appointment-letters', label: 'Appt. Letters',       icon: '◱', group: 'HR' },
+  { href: '/admin/audit-logs',           label: 'Audit Logs',          icon: '◐', group: '' },
+  { href: '/admin/settings',            label: 'Settings',            icon: '◫', group: '' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -117,32 +120,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Nav */}
           <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
-            {NAV.map(({ href, label, icon }) => {
-              const active = pathname === href || (pathname.startsWith(href + '/') && href !== '/admin');
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setSidebarOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '9px 20px',
-                    fontSize: 13,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? 'var(--fg)' : 'var(--fg-3)',
-                    textDecoration: 'none',
-                    background: active ? 'var(--accent-soft)' : 'transparent',
-                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                    transition: 'all var(--t-fast)',
-                  }}
-                >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
-                  {label}
-                </Link>
-              );
-            })}
+            {(() => {
+              const items: React.ReactNode[] = [];
+              let lastGroup = '';
+              NAV.forEach(({ href, label, icon, group }) => {
+                if (group && group !== lastGroup) {
+                  items.push(
+                    <div key={`grp-${group}`} style={{ padding: '10px 20px 4px', fontSize: 10, fontWeight: 700, color: 'var(--fg-4)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      {group}
+                    </div>
+                  );
+                  lastGroup = group;
+                } else if (!group && lastGroup) {
+                  lastGroup = '';
+                }
+                const active = pathname === href || (pathname.startsWith(href + '/') && href !== '/admin');
+                items.push(
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '9px 20px',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 400,
+                      color: active ? 'var(--fg)' : 'var(--fg-3)',
+                      textDecoration: 'none',
+                      background: active ? 'var(--accent-soft)' : 'transparent',
+                      borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                      transition: 'all var(--t-fast)',
+                    }}
+                  >
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+                    {label}
+                  </Link>
+                );
+              });
+              return items;
+            })()}
           </nav>
 
           {/* User footer */}

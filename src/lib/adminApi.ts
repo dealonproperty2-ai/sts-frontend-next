@@ -109,6 +109,72 @@ export interface BillStats {
   }>;
 }
 
+export interface Employee {
+  _id: string;
+  employeeId: string;
+  name: string;
+  fatherName: string;
+  email: string;
+  phone: string;
+  address: string;
+  designation: string;
+  department: string;
+  joiningDate?: string;
+  basicSalary: number;
+  hra: number;
+  specialAllowance: number;
+  panNumber: string;
+  uanNumber: string;
+  pfNumber: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  branchName: string;
+  branchCode: string;
+  workLocation: string;
+  isActive: boolean;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaySlip {
+  _id: string;
+  employeeId: Employee | string;
+  month: string;
+  workingDays: number;
+  basicSalary: number;
+  hra: number;
+  specialAllowance: number;
+  bonus: number;
+  grossSalary: number;
+  pfDeduction: number;
+  professionalTax: number;
+  otherDeductions: number;
+  totalDeductions: number;
+  netSalary: number;
+  status: 'generated' | 'sent' | 'downloaded';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppointmentLetter {
+  _id: string;
+  employeeId: Employee | string;
+  offerDate: string;
+  joiningDate: string;
+  designation: string;
+  department: string;
+  salary: number;
+  workLocation: string;
+  probationPeriod: string;
+  hrName: string;
+  customTerms: string;
+  status: 'generated' | 'sent' | 'downloaded';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuditLog {
   _id: string;
   adminId: string;
@@ -401,4 +467,42 @@ export const adminApi = {
     apiFetch<ListResponse<AuditLog>>(
       `/api/admin/audit-logs${params ? `?${new URLSearchParams(params)}` : ''}`
     ),
+
+  // ── Employees ─────────────────────────────────────────────────────────────
+  employees: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<Employee>>(
+      `/api/admin/employees${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  getEmployee: (id: string) =>
+    apiFetch<{ data: Employee }>(`/api/admin/employees/${id}`),
+  createEmployee: (data: Partial<Employee>) =>
+    apiFetch<{ data: Employee }>('/api/admin/employees', { method: 'POST', body: JSON.stringify(data) }),
+  updateEmployee: (id: string, data: Partial<Employee>) =>
+    apiFetch<{ data: Employee }>(`/api/admin/employees/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteEmployee: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/employees/${id}`, { method: 'DELETE' }),
+
+  // ── Payslips ──────────────────────────────────────────────────────────────
+  payslips: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<PaySlip>>(
+      `/api/admin/payslips${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  createPayslip: (data: Partial<PaySlip>) =>
+    apiFetch<{ data: PaySlip }>('/api/admin/payslips', { method: 'POST', body: JSON.stringify(data) }),
+  updatePayslip: (id: string, data: Partial<PaySlip>) =>
+    apiFetch<{ data: PaySlip }>(`/api/admin/payslips/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deletePayslip: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/payslips/${id}`, { method: 'DELETE' }),
+
+  // ── Appointment Letters ───────────────────────────────────────────────────
+  appointmentLetters: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<AppointmentLetter>>(
+      `/api/admin/appointment-letters${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  createAppointmentLetter: (data: Partial<AppointmentLetter>) =>
+    apiFetch<{ data: AppointmentLetter }>('/api/admin/appointment-letters', { method: 'POST', body: JSON.stringify(data) }),
+  updateAppointmentLetter: (id: string, data: Partial<AppointmentLetter>) =>
+    apiFetch<{ data: AppointmentLetter }>(`/api/admin/appointment-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteAppointmentLetter: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/appointment-letters/${id}`, { method: 'DELETE' }),
 };
