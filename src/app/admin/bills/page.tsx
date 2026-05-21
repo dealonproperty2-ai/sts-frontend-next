@@ -446,14 +446,14 @@ export default function BillsPage() {
     setSaving(true);
     try {
       const payload = {
-        billType: form.billType,
+        billType: form.billType as 'rent' | 'electricity',
         billMonth: form.billMonth,
         invoiceNumber: form.invoiceNumber.trim(),
         billDate: form.billDate,
         dueDate: form.dueDate,
         amount,
         gstAmount,
-        status: form.status,
+        status: form.status as 'pending' | 'paid',
         paidDate: form.paidDate || undefined,
         notes: form.notes.trim() || undefined,
         fileUrl: uploadedFile?.fileUrl ?? '',
