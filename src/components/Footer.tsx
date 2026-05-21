@@ -26,7 +26,7 @@ const COLS: { title: string; links: [string, string][] }[] = [
     links: [
       ['All Courses', '/courses'],
       ['Web Dev Bootcamp', '/courses/webdev'],
-      ['Apply', '/careers'],
+      ['Apply', '/careers '],
     ],
   },
 ];
@@ -34,7 +34,7 @@ const COLS: { title: string; links: [string, string][] }[] = [
 const SOCIAL: { icon: IconName; label: string; href: string }[] = [
   { icon: 'github',   label: 'Step To Soft on GitHub',   href: 'https://github.com/steptosoft' },
   { icon: 'linkedin', label: 'Step To Soft on LinkedIn', href: 'https://www.linkedin.com/company/steptosoft' },
-  { icon: 'mail',     label: 'Email Step To Soft',       href: 'mailto:hello@steptosoft.com' },
+  { icon: 'mail',     label: 'Email Step To Soft',       href: 'mailto:info@steptosoft.com' },
 ];
 
 export default function Footer() {
