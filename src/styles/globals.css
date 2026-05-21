@@ -608,3 +608,36 @@ label.field-label {
 
 /* Remove persistent GPU layer promotion from float-cards */
 .float-card { will-change: auto; }
+
+/* Hero stage tablet responsive — cards scale down nicely below 980px */
+@media (max-width: 980px) {
+  .hero-stage .float-card {
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,0.45),
+      0 6px 16px -6px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+}
+
+/* Light-mode section backgrounds for better contrast */
+[data-theme='light'] .section {
+  background: var(--bg);
+}
+[data-theme='light'] .card {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(10,10,15,0.1);
+}
+
+/* Ensure float-card text is always readable regardless of theme */
+.float-card {
+  color: var(--fg);
+}
+
+/* Better text balance for headings on mobile */
+@media (max-width: 640px) {
+  h1, h2 {
+    text-wrap: balance;
+  }
+  .lead {
+    font-size: 16px;
+  }
+}

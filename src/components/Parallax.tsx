@@ -55,7 +55,13 @@ export const Reveal = ({
   const [shown, setShown] = React.useState(false);
   React.useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) { setShown(true); return; }
+    // Show immediately if element is already in viewport on mount
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 1.05) {
+      setShown(true);
+      return;
+    }
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -63,7 +69,7 @@ export const Reveal = ({
           io.disconnect();
         }
       },
-      { threshold: 0.12 }
+      { threshold: 0.05 }
     );
     io.observe(el);
     return () => io.disconnect();

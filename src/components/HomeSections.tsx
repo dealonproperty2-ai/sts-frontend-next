@@ -405,7 +405,10 @@ export const HeroFloatingCards = () => {
       </div>
       <style>{`
         @media (max-width: 980px) {
-          .hero-stage { height: 460px !important; margin-top: 40px; display: none; }
+          .hero-stage { height: 420px !important; margin-top: 56px; }
+        }
+        @media (max-width: 600px) {
+          .hero-stage { display: none !important; }
         }
       `}</style>
     </section>

@@ -27,7 +27,7 @@ export default function Logo({ size = 40 }: { size?: number }) {
           fontWeight: 700,
           fontSize: '20px',
           letterSpacing: '-0.03em',
-          color: 'var(--foreground)',
+          color: 'var(--fg)',
           whiteSpace: 'nowrap',
         }}
       >
