@@ -66,12 +66,12 @@ export default function CareersForm({ roles }: Props) {
         >
           Application form
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label className="field-label" htmlFor="cf-name">
               Name
             </label>
-            <input id="cf-name" className="input" required value={form.name} onChange={update('name')} placeholder="Full name" />
+            <input id="cf-name" className="input" required autoComplete="name" value={form.name} onChange={update('name')} placeholder="Full name" />
           </div>
           <div>
             <label className="field-label" htmlFor="cf-email">
@@ -82,6 +82,7 @@ export default function CareersForm({ roles }: Props) {
               className="input"
               required
               type="email"
+              autoComplete="email"
               value={form.email}
               onChange={update('email')}
               placeholder="you@email.com"
@@ -91,7 +92,7 @@ export default function CareersForm({ roles }: Props) {
             <label className="field-label" htmlFor="cf-phone">
               Phone
             </label>
-            <input id="cf-phone" className="input" required value={form.phone} onChange={update('phone')} placeholder="+91 …" />
+            <input id="cf-phone" className="input" required type="tel" autoComplete="tel" value={form.phone} onChange={update('phone')} placeholder="+91 …" />
           </div>
           <div>
             <label className="field-label" htmlFor="cf-role">
@@ -144,7 +145,7 @@ export default function CareersForm({ roles }: Props) {
           )}
         </button>
         {status === 'error' && (
-          <p className="mono" style={{ marginTop: 12, fontSize: 11, color: '#ff7b7b' }}>
+          <p role="alert" className="mono" style={{ marginTop: 12, fontSize: 11, color: 'var(--error)', textAlign: 'center' }}>
             {errMsg || 'Could not send. Please try again.'}
           </p>
         )}

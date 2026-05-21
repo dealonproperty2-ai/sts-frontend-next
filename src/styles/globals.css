@@ -24,6 +24,7 @@
 
   --card-bg: rgba(20, 20, 26, 0.55);
   --card-edge: rgba(255, 255, 255, 0.08);
+  --error: #ff7b7b;
 
   --gap: 28px;
   --pad-x: clamp(20px, 4vw, 64px);
@@ -64,6 +65,7 @@
   --fg-4: #88888f;
   --card-bg: rgba(255, 255, 255, 0.7);
   --card-edge: rgba(10, 10, 15, 0.08);
+  --error: #d93025;
 }
 
 * {
@@ -368,6 +370,7 @@ p {
 .input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 textarea.input {
   resize: vertical;
@@ -583,6 +586,9 @@ label.field-label {
   .grid-4 {
     grid-template-columns: 1fr;
   }
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Footer grid */
@@ -596,6 +602,63 @@ label.field-label {
 }
 @media (max-width: 520px) {
   .footer-grid { grid-template-columns: 1fr; }
+}
+
+/* Skip-to-content link: visually hidden until focused */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  overflow: visible;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #0a0a0d;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 999px;
+  z-index: 9999;
+  outline: 2px solid #0a0a0d;
+  outline-offset: 2px;
+}
+
+/* Focus-visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+/* Select styling: cross-browser consistent appearance */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888892' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
 }
 
 /* Reduced motion */

@@ -73,6 +73,7 @@ export default function AboutPage() {
                     src="/asansol-hq.jpg"
                     alt="Step To Soft studio — Asansol HQ"
                     fill
+                    priority
                     style={{ objectFit: 'cover' }}
                     sizes="(max-width: 980px) 100vw, 50vw"
                   />

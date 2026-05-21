@@ -98,7 +98,7 @@ const orgJsonLd = {
   logo: `${SITE_URL}/logo.png`,
   foundingDate: '2018',
   email: 'hello@steptosoft.com',
-  telephone: '+91-9999988888',
+  telephone: '+91-3413556956',
   address: { '@type': 'PostalAddress', addressLocality: 'Asansol', addressRegion: 'West Bengal', addressCountry: 'IN' },
   sameAs: ['https://www.linkedin.com/company/steptosoft', 'https://github.com/steptosoft'],
   description: 'A 25-engineer product studio offering custom software development, SaaS engineering, dedicated developer pods, and a full-stack web bootcamp.',
@@ -133,10 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <>
             <Script id="ld-org" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
             <Script id="ld-website" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-            <a
-              href="#main"
-              style={{ position: 'absolute', left: -9999, top: 'auto', width: 1, height: 1, overflow: 'hidden' }}
-            >
+            <a href="#main" className="skip-link">
               Skip to content
             </a>
             <ThemeProvider>

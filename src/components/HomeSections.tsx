@@ -862,7 +862,7 @@ export const TestimonialSection = () => {
       />
       <div className="container" style={{ position: 'relative', textAlign: 'center', maxWidth: 880 }}>
         <Eyebrow>Field reports</Eyebrow>
-        <div style={{ minHeight: 240, marginTop: 32, position: 'relative' }}>
+        <div aria-live="polite" aria-atomic="true" style={{ minHeight: 240, marginTop: 32, position: 'relative' }}>
           {TESTIMONIALS.map((t, idx) => (
             <div
               key={idx}

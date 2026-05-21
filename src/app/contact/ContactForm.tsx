@@ -64,12 +64,12 @@ export default function ContactForm() {
           Brief us
         </div>
         <h3 style={{ marginBottom: 24 }}>Project enquiry</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label className="field-label" htmlFor="ef-name">
               Your name
             </label>
-            <input id="ef-name" className="input" required value={form.name} onChange={upd('name')} placeholder="Full name" />
+            <input id="ef-name" className="input" required autoComplete="name" value={form.name} onChange={upd('name')} placeholder="Full name" />
           </div>
           <div>
             <label className="field-label" htmlFor="ef-email">
@@ -80,6 +80,7 @@ export default function ContactForm() {
               className="input"
               required
               type="email"
+              autoComplete="email"
               value={form.email}
               onChange={upd('email')}
               placeholder="you@company.com"
@@ -89,13 +90,13 @@ export default function ContactForm() {
             <label className="field-label" htmlFor="ef-phone">
               Phone
             </label>
-            <input id="ef-phone" className="input" value={form.phone} onChange={upd('phone')} placeholder="+91 …" />
+            <input id="ef-phone" className="input" type="tel" autoComplete="tel" value={form.phone} onChange={upd('phone')} placeholder="+91 …" />
           </div>
           <div>
             <label className="field-label" htmlFor="ef-country">
               Country
             </label>
-            <input id="ef-country" className="input" value={form.country} onChange={upd('country')} placeholder="India" />
+            <input id="ef-country" className="input" autoComplete="country-name" value={form.country} onChange={upd('country')} placeholder="India" />
           </div>
           <div>
             <label className="field-label" htmlFor="ef-service">
@@ -156,7 +157,7 @@ export default function ContactForm() {
           )}
         </button>
         {status === 'error' && (
-          <p className="mono" style={{ marginTop: 12, fontSize: 11, color: '#ff7b7b', textAlign: 'center' }}>
+          <p role="alert" className="mono" style={{ marginTop: 12, fontSize: 11, color: 'var(--error)', textAlign: 'center' }}>
             {errMsg || 'Could not send. Please try again.'}
           </p>
         )}

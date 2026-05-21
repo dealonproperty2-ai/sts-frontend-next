@@ -26,7 +26,7 @@ const COLS: { title: string; links: [string, string][] }[] = [
     links: [
       ['All Courses', '/courses'],
       ['Web Dev Bootcamp', '/courses/webdev'],
-      ['Apply', '/careers '],
+      ['Apply', '/careers'],
     ],
   },
 ];
