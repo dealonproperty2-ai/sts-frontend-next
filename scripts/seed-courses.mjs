@@ -1,15 +1,19 @@
 // Seed the 6 default courses into MongoDB.
 // Safe to re-run — uses upsert so existing records are updated, not duplicated.
 //
-//   node scripts/seed-courses.mjs
-//   MONGODB_URI=mongodb+srv://... node scripts/seed-courses.mjs
+//   npm run seed:courses
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 const mongoose = require('mongoose');
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/stsdb';
+const MONGO_URI = process.env.MONGODB_URI;
+if (!MONGO_URI) {
+  console.error('❌  MONGODB_URI is not set.');
+  console.error('    Run via: npm run seed:courses  (loads .env.local automatically)');
+  process.exit(1);
+}
 
 const CourseSchema = new mongoose.Schema(
   {
@@ -141,7 +145,8 @@ const COURSES = [
 
 async function main() {
   await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB:', MONGO_URI);
+  const host = new URL(MONGO_URI).host;
+  console.log('Connected to MongoDB:', host);
 
   let created = 0;
   let updated = 0;
