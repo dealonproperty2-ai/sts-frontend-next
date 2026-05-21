@@ -2,11 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import Icon from '@/components/Icon';
 import { CornerTicks, Eyebrow, SectionHead, SpecLine } from '@/components/Primitives';
 import { Reveal, TiltCard } from '@/components/Parallax';
 import CTABanner from '@/components/CTABanner';
-import { COURSES, CURRICULUM_WEBDEV, findCourse } from '@/lib/courses';
+import { CURRICULUM_WEBDEV } from '@/lib/courses';
+import { connectDb } from '@/server/db';
+import Course from '@/server/models/Course';
+
+export const revalidate = 60;
 
 const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
 
@@ -14,29 +19,40 @@ interface Params {
   params: { slug: string };
 }
 
-export const dynamicParams = false;
+// React cache deduplicates calls within the same request
+const getCourse = cache(async (slug: string) => {
+  await connectDb();
+  return Course.findOne({ slug, isActive: true }).lean();
+});
 
 export async function generateStaticParams() {
-  return COURSES.map((c) => ({ slug: c.id }));
+  try {
+    await connectDb();
+    const courses = await Course.find({ isActive: true }).select('slug').lean();
+    return courses.map(c => ({ slug: c.slug }));
+  } catch {
+    // Fall back to known slugs if DB is unreachable at build time
+    return ['webdev', 'frontend', 'backend', 'angular', 'devops', 'qa'].map(slug => ({ slug }));
+  }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const course = findCourse(params.slug);
+  const course = await getCourse(params.slug);
   if (!course) return { title: 'Course not found' };
   return {
     title: `${course.title} — ${course.dur}`,
     description: course.desc,
-    alternates: { canonical: `/courses/${course.id}` },
+    alternates: { canonical: `/courses/${course.slug}` },
     openGraph: {
-      url: `/courses/${course.id}`,
+      url: `/courses/${course.slug}`,
       title: `${course.title} — Step To Soft Academy`,
       description: course.desc,
     },
   };
 }
 
-export default function CourseDetailPage({ params }: Params) {
-  const course = findCourse(params.slug);
+export default async function CourseDetailPage({ params }: Params) {
+  const course = await getCourse(params.slug);
   if (!course) notFound();
 
   const courseJsonLd = {
@@ -44,7 +60,7 @@ export default function CourseDetailPage({ params }: Params) {
     '@type': 'Course',
     name: course.title,
     description: course.longDesc,
-    url: `${SITE_URL}/courses/${course.id}`,
+    url: `${SITE_URL}/courses/${course.slug}`,
     provider: {
       '@type': 'Organization',
       name: 'Step To Soft Academy',
@@ -65,13 +81,14 @@ export default function CourseDetailPage({ params }: Params) {
     },
   };
 
-  const useCurriculum = course.id === 'webdev';
+  const useCurriculum = course.slug === 'webdev';
 
   return (
     <div className="page-enter">
       <Script
-        id={`ld-course-${course.id}`}
+        id={`ld-course-${course.slug}`}
         type="application/ld+json"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
       />
       <section style={{ paddingTop: 160, paddingBottom: 64, position: 'relative', overflow: 'hidden' }}>

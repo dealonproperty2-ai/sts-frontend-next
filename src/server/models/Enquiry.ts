@@ -4,17 +4,22 @@ const EnquirySchema = new Schema(
   {
     name: { type: String, required: true, maxlength: 100 },
     email: { type: String, required: true, maxlength: 100 },
-    phone: { type: String, default: null },
-    country: { type: String, default: null },
-    service: { type: String, default: null },
-    budget: { type: String, default: null },
+    phone: { type: String, default: null, maxlength: 30 },
+    country: { type: String, default: null, maxlength: 60 },
+    service: { type: String, default: null, maxlength: 100 },
+    budget: { type: String, default: null, maxlength: 60 },
     message: { type: String, required: true },
-    status: { type: String, default: 'new' },
+    status: { type: String, default: 'new', enum: ['new', 'open', 'closed'] },
     sourceIp: { type: String, default: null },
     userAgent: { type: String, default: null },
+    // Soft delete
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
+
+EnquirySchema.index({ status: 1, createdAt: -1 });
+EnquirySchema.index({ deletedAt: 1 });
 
 export type EnquiryDoc = mongoose.InferSchemaType<typeof EnquirySchema>;
 

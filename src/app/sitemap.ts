@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
-import { COURSES } from '@/lib/courses';
+import { connectDb } from '@/server/db';
+import Course from '@/server/models/Course';
 
 const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -17,12 +18,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  const courseRoutes: MetadataRoute.Sitemap = COURSES.map((c) => ({
-    url: `${SITE_URL}/courses/${c.id}`,
-    lastModified: now,
-    changeFrequency: 'monthly',
-    priority: c.tag === 'Flagship' ? 0.9 : 0.7,
-  }));
+  let courseRoutes: MetadataRoute.Sitemap = [];
+  try {
+    await connectDb();
+    const courses = await Course.find({ isActive: true }).select('slug tag updatedAt').lean();
+    courseRoutes = courses.map((c) => ({
+      url: `${SITE_URL}/courses/${c.slug}`,
+      lastModified: c.updatedAt ?? now,
+      changeFrequency: 'monthly',
+      priority: c.tag === 'Flagship' ? 0.9 : 0.7,
+    }));
+  } catch {
+    // Fall back to known slugs if DB is unreachable at build time
+    courseRoutes = ['webdev', 'frontend', 'backend', 'angular', 'devops', 'qa'].map((slug) => ({
+      url: `${SITE_URL}/courses/${slug}`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: slug === 'webdev' ? 0.9 : 0.7,
+    }));
+  }
 
   return [...staticRoutes, ...courseRoutes];
 }

@@ -2,10 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import Icon from '@/components/Icon';
+import type { IconName } from '@/components/Icon';
 import { CornerTicks, Eyebrow, SectionHead, SpecLine } from '@/components/Primitives';
 import { Reveal, TiltCard } from '@/components/Parallax';
 import CTABanner from '@/components/CTABanner';
-import { COURSES } from '@/lib/courses';
+import { connectDb } from '@/server/db';
+import Course from '@/server/models/Course';
+
+export const revalidate = 60;
 
 const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
 
@@ -17,35 +21,41 @@ export const metadata: Metadata = {
   openGraph: { url: '/courses', title: 'Training & Courses — Step To Soft Academy' },
 };
 
-const coursesJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  itemListElement: COURSES.map((c, i) => ({
-    '@type': 'Course',
-    position: i + 1,
-    name: c.title,
-    description: c.desc,
-    url: `${SITE_URL}/courses/${c.id}`,
-    provider: {
-      '@type': 'Organization',
-      name: 'Step To Soft Academy',
-      sameAs: SITE_URL,
-    },
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'INR',
-      price: c.priceInr,
-      category: 'Tuition',
-    },
-  })),
-};
+export default async function CoursesPage() {
+  await connectDb();
+  const courses = await Course.find({ isActive: true })
+    .sort({ sortOrder: 1, createdAt: 1 })
+    .lean();
 
-export default function CoursesPage() {
+  const coursesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: courses.map((c, i) => ({
+      '@type': 'Course',
+      position: i + 1,
+      name: c.title,
+      description: c.desc,
+      url: `${SITE_URL}/courses/${c.slug}`,
+      provider: {
+        '@type': 'Organization',
+        name: 'Step To Soft Academy',
+        sameAs: SITE_URL,
+      },
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'INR',
+        price: c.priceInr,
+        category: 'Tuition',
+      },
+    })),
+  };
+
   return (
     <div className="page-enter">
       <Script
         id="ld-courses"
         type="application/ld+json"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(coursesJsonLd) }}
       />
       <section style={{ paddingTop: 160, paddingBottom: 80, position: 'relative', overflow: 'hidden' }}>
@@ -103,14 +113,14 @@ export default function CoursesPage() {
                 textTransform: 'uppercase',
               }}
             >
-              {`// ${COURSES.length} active tracks · cohort starts Q3`}
+              {`// ${courses.length} active tracks · cohort starts Q3`}
             </span>
           </div>
           <div className="grid-3">
-            {COURSES.map((c, i) => (
-              <Reveal key={c.id} delay={i * 60}>
+            {courses.map((c, i) => (
+              <Reveal key={String(c._id)} delay={i * 60}>
                 <TiltCard max={5}>
-                  <Link href={`/courses/${c.id}`} style={{ display: 'block' }}>
+                  <Link href={`/courses/${c.slug}`} style={{ display: 'block' }}>
                     <div
                       className="card ticked"
                       style={{
@@ -137,7 +147,7 @@ export default function CoursesPage() {
                             justifyContent: 'center',
                           }}
                         >
-                          <Icon name={c.icon} size={20} />
+                          <Icon name={c.icon as IconName} size={20} />
                         </div>
                         <span className="chip">
                           <span className="chip-dot" />

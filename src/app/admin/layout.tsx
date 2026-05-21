@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { adminApi } from '@/lib/adminApi';
 
 const adminLayoutStyle = `
   .admin-shell { display: flex; height: 100vh; overflow: hidden; background: var(--bg); }
@@ -26,6 +27,9 @@ const NAV = [
   { href: '/admin/enquiries', label: 'Enquiries', icon: '◈' },
   { href: '/admin/courses', label: 'Courses', icon: '◧' },
   { href: '/admin/users', label: 'Users', icon: '◉' },
+  { href: '/admin/bills', label: 'Office Bills', icon: '◑' },
+  { href: '/admin/audit-logs', label: 'Audit Logs', icon: '◐' },
+  { href: '/admin/settings', label: 'Settings', icon: '◫' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -36,10 +40,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isLoginPage = pathname === '/admin/login';
+  const isPublicAdminPage = isLoginPage || pathname === '/admin/reset-password';
 
   useEffect(() => {
     const token = localStorage.getItem('sts-admin-token');
-    if (!token && !isLoginPage) {
+    if (!token && !isPublicAdminPage) {
       router.replace('/admin/login');
       return;
     }
@@ -52,10 +57,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
     setReady(true);
-  }, [isLoginPage, router]);
+  }, [isPublicAdminPage, router]);
 
-  function signOut() {
+  async function signOut() {
+    try {
+      await adminApi.logout();
+    } catch {
+      // best-effort; clear local state regardless
+    }
     localStorage.removeItem('sts-admin-token');
+    localStorage.removeItem('sts-admin-refresh');
     localStorage.removeItem('sts-admin-user');
     router.replace('/admin/login');
   }
@@ -71,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (isLoginPage) {
+  if (isPublicAdminPage) {
     return (
       <>
         <style>{adminLayoutStyle}</style>

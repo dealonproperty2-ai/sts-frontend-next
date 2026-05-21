@@ -12,11 +12,13 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)));
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)));
   const status = searchParams.get('status') ?? '';
   const search = searchParams.get('search') ?? '';
+  const showDeleted = searchParams.get('deleted') === 'true';
 
   const filter: Record<string, unknown> = {};
+  filter.deletedAt = showDeleted ? { $ne: null } : null;
   if (status) filter.status = status;
   if (search) {
     const re = { $regex: search, $options: 'i' };

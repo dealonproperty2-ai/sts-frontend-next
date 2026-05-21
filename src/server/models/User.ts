@@ -8,6 +8,15 @@ const UserSchema = new Schema(
     password: { type: String, required: true },
     role: { type: String, default: 'user' },
     isActive: { type: Boolean, default: true },
+    // 2FA
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, default: '' },
+    twoFactorBackupCodes: { type: [String], default: [] },
+    // Password reset
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
+    // Tracking
+    lastLoginAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

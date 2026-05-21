@@ -1,5 +1,7 @@
 type Bucket = { count: number; resetAt: number };
 
+const MAX_KEYS = 10_000;
+
 const STORE: Map<string, Bucket> = (() => {
   const g = globalThis as { __rateStore?: Map<string, Bucket> };
   if (!g.__rateStore) g.__rateStore = new Map();
@@ -8,7 +10,9 @@ const STORE: Map<string, Bucket> = (() => {
 
 function evictExpired() {
   const now = Date.now();
-  STORE.forEach((b, k) => { if (b.resetAt < now) STORE.delete(k); });
+  for (const [k, b] of STORE) {
+    if (b.resetAt < now) STORE.delete(k);
+  }
 }
 
 let _lastEvict = 0;
@@ -20,8 +24,13 @@ export function rateLimit(
 ): { ok: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
 
-  // Evict expired entries at most once per minute to prevent memory growth
   if (now - _lastEvict > 60_000) { evictExpired(); _lastEvict = now; }
+
+  // Hard cap: evict oldest entry when store is full
+  if (STORE.size >= MAX_KEYS && !STORE.has(key)) {
+    const oldest = STORE.keys().next().value;
+    if (oldest) STORE.delete(oldest);
+  }
 
   const b = STORE.get(key);
   if (!b || b.resetAt < now) {

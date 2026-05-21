@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 
 export interface AdminTokenPayload {
   id: string;
+  email?: string;
   role: string;
   iat?: number;
   exp?: number;
