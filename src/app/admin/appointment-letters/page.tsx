@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
 import { adminApi, Employee, AppointmentLetter } from '@/lib/adminApi';
 import {
   COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE, COMPANY_EMAIL, COMPANY_WEBSITE,
-  LOGO_BASE64, SIGNATURE_BASE64, HR_NAME_DEFAULT, HR_TITLE_DEFAULT,
+  SIGNATURE_BASE64, HR_NAME_DEFAULT, HR_TITLE_DEFAULT,
 } from '@/lib/hrConstants';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -41,32 +41,31 @@ interface LetterDocProps {
 
 function LetterDoc({ emp, form }: LetterDocProps) {
   const paraStyle: React.CSSProperties = { marginBottom: 12, fontSize: 12, lineHeight: 1.6, color: '#111', textAlign: 'justify' };
-  const clauseLabel: React.CSSProperties = { fontWeight: 700, color: '#111' };
 
   const clauses: Array<{ title: string; content: string }> = [
     {
       title: 'Designation',
-      content: `You are being appointed as <strong>${form.designation}</strong>${form.department ? ` in the <strong>${form.department}</strong> department` : ''}.`,
+      content: `You are being appointed as <strong>${form.designation || '—'}</strong>${form.department ? ` in the <strong>${form.department}</strong> department` : ''}.`,
     },
     {
       title: 'Date of Joining',
-      content: `Your date of joining will be <strong>${fmtDate(form.joiningDate)}</strong>. Please ensure you report to the office on or before this date with all required documents.`,
+      content: `Your date of joining will be <strong>${fmtDate(form.joiningDate) || '—'}</strong>. Please ensure you report to the office on or before this date with all required documents.`,
     },
     {
       title: 'Compensation',
-      content: `You will be entitled to a gross monthly salary of <strong>₹${fmtINR(form.salary)}/- (Rupees ${fmtINR(form.salary)} only)</strong>. Your detailed salary break-up will be provided separately as part of your employment terms.`,
+      content: `You will be entitled to a gross monthly salary of <strong>₹${fmtINR(form.salary)}/- (Rupees ${fmtINR(form.salary)} only)</strong>. A detailed salary break-up will be provided separately.`,
     },
     {
       title: 'Work Location',
-      content: `Your primary place of work will be at <strong>${form.workLocation || COMPANY_ADDRESS}</strong>. The Company reserves the right to transfer you to any of its offices/departments as per operational requirements.`,
+      content: `Your primary place of work will be at <strong>${form.workLocation || COMPANY_ADDRESS}</strong>. The Company reserves the right to transfer you to any of its offices as per operational requirements.`,
     },
     {
       title: 'Probation Period',
-      content: `You will be on probation for a period of <strong>${form.probationPeriod}</strong> from the date of joining. During this period, your performance will be assessed. On successful completion, you will be confirmed in the service of the Company.`,
+      content: `You will be on probation for a period of <strong>${form.probationPeriod}</strong> from the date of joining. On successful completion, you will be confirmed in the service of the Company.`,
     },
     {
       title: 'Working Hours',
-      content: `Your working hours will be as per Company policy, currently <strong>9:00 AM to 6:00 PM, Monday to Saturday</strong>. The Company may revise working hours from time to time as per business requirements.`,
+      content: `Your working hours will be as per Company policy, currently <strong>9:00 AM to 6:00 PM, Monday to Saturday</strong>. The Company may revise working hours from time to time.`,
     },
     {
       title: 'Leave Entitlement',
@@ -74,11 +73,11 @@ function LetterDoc({ emp, form }: LetterDocProps) {
     },
     {
       title: 'Confidentiality &amp; Non-Disclosure',
-      content: `You will not, during or after the term of your employment, disclose to any person any confidential information relating to the Company, its clients, employees, finances, or operations without the prior written consent of the Company.`,
+      content: `You will not, during or after the term of your employment, disclose any confidential information relating to the Company, its clients, employees, or operations without prior written consent.`,
     },
     {
       title: 'Notice Period',
-      content: `Either party may terminate this employment by giving <strong>30 (Thirty) days</strong> written notice or payment in lieu thereof. During the probation period, either party may terminate the employment by giving <strong>7 (Seven) days</strong> notice.`,
+      content: `Either party may terminate this employment by giving <strong>30 (Thirty) days</strong> written notice or payment in lieu thereof. During probation, either party may terminate by giving <strong>7 (Seven) days</strong> notice.`,
     },
     ...(form.customTerms
       ? [{ title: 'Additional Terms', content: form.customTerms }]
@@ -91,7 +90,7 @@ function LetterDoc({ emp, form }: LetterDocProps) {
       {/* Letterhead */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '3px solid #1a1a2e', paddingBottom: 12, marginBottom: 18 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_BASE64} alt="Step To Soft" height={48} style={{ objectFit: 'contain' }} />
+        <img src="/logo3.png" alt="Step To Soft" height={48} style={{ objectFit: 'contain' }} />
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.02em' }}>{COMPANY_NAME}</div>
           <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{COMPANY_ADDRESS}</div>
@@ -104,7 +103,9 @@ function LetterDoc({ emp, form }: LetterDocProps) {
       {/* Date & Ref */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: '#333' }}>Date: <strong>{fmtDate(form.offerDate || todayISO())}</strong></div>
-        <div style={{ fontSize: 11, color: '#333', marginTop: 3 }}>Ref: STS/HR/APT/{new Date(form.offerDate || todayISO()).getFullYear()}/{emp.employeeId || '—'}</div>
+        <div style={{ fontSize: 11, color: '#333', marginTop: 3 }}>
+          Ref: STS/HR/APT/{new Date(form.offerDate || todayISO()).getFullYear()}/{emp.employeeId || '—'}
+        </div>
       </div>
 
       {/* Addressee */}
@@ -126,9 +127,9 @@ function LetterDoc({ emp, form }: LetterDocProps) {
 
       {/* Opening */}
       <div style={paraStyle}>
-        We are pleased to appoint you as <strong>{form.designation}</strong>
+        We are pleased to appoint you as <strong>{form.designation || '—'}</strong>
         {form.department ? ` in the ${form.department} Department` : ''} at <strong>{COMPANY_NAME}</strong>,
-        effective <strong>{fmtDate(form.joiningDate)}</strong>.
+        effective <strong>{fmtDate(form.joiningDate) || '—'}</strong>.
         This appointment is subject to the following terms and conditions:
       </div>
 
@@ -136,7 +137,7 @@ function LetterDoc({ emp, form }: LetterDocProps) {
       <ol style={{ paddingLeft: 20, margin: 0 }}>
         {clauses.map((c, i) => (
           <li key={i} style={{ marginBottom: 10, fontSize: 12, lineHeight: 1.6, color: '#111' }}>
-            <span style={clauseLabel}>{c.title}: </span>
+            <strong>{c.title}: </strong>
             <span dangerouslySetInnerHTML={{ __html: c.content }} />
           </li>
         ))}
@@ -207,27 +208,34 @@ const inp: React.CSSProperties = {
   width: '100%', boxSizing: 'border-box',
 };
 const btnPrimary: React.CSSProperties = {
-  padding: '8px 18px', fontSize: 13, fontWeight: 600, color: '#fff',
+  padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff',
   background: 'var(--accent)', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer',
 };
 const btnSec: React.CSSProperties = {
-  padding: '8px 14px', fontSize: 13, color: 'var(--fg-2)', background: 'var(--bg-2)',
+  padding: '8px 12px', fontSize: 12, color: 'var(--fg-2)', background: 'var(--bg-2)',
   border: '1px solid var(--line-strong)', borderRadius: 'var(--r-sm)', cursor: 'pointer',
+};
+const btnDanger: React.CSSProperties = {
+  padding: '3px 8px', fontSize: 11, color: '#ef4444', background: 'transparent',
+  border: '1px solid #fca5a5', borderRadius: 4, cursor: 'pointer',
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AppointmentLettersPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [letters, setLetters]     = useState<AppointmentLetter[]>([]);
+  const [employees, setEmployees]     = useState<Employee[]>([]);
+  const [letters, setLetters]         = useState<AppointmentLetter[]>([]);
   const [letterTotal, setLetterTotal] = useState(0);
   const [letterPage, setLetterPage]   = useState(1);
   const [letterPages, setLetterPages] = useState(1);
-  const [loading, setLoading]     = useState(false);
-  const [form, setForm]           = useState<LetterForm>(BLANK_FORM);
-  const [saving, setSaving]       = useState(false);
-  const [saveMsg, setSaveMsg]     = useState('');
-  const [saveErr, setSaveErr]     = useState('');
-  const [previewEmp, setPreviewEmp] = useState<Employee | null>(null);
+  const [loading, setLoading]         = useState(false);
+  const [form, setForm]               = useState<LetterForm>(BLANK_FORM);
+  const [saving, setSaving]           = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [saveMsg, setSaveMsg]         = useState('');
+  const [saveErr, setSaveErr]         = useState('');
+  const [previewEmp, setPreviewEmp]   = useState<Employee | null>(null);
+  const [editingId, setEditingId]     = useState<string | null>(null);
+  const pendingDownload               = useRef(false);
 
   const loadEmps = useCallback(async () => {
     try {
@@ -240,15 +248,22 @@ export default function AppointmentLettersPage() {
     setLoading(true);
     try {
       const r = await adminApi.appointmentLetters({ page: String(letterPage), limit: '10' });
-      setLetters(r.data);
-      setLetterTotal(r.meta.total);
-      setLetterPages(r.meta.pages);
+      setLetters(r.data); setLetterTotal(r.meta.total); setLetterPages(r.meta.pages);
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [letterPage]);
 
   useEffect(() => { loadEmps(); }, [loadEmps]);
   useEffect(() => { loadLetters(); }, [loadLetters]);
+
+  // Trigger PDF download after state settles (used by history row download)
+  useEffect(() => {
+    if (!pendingDownload.current || !previewEmp || !form.joiningDate) return;
+    pendingDownload.current = false;
+    const t = setTimeout(() => doDownloadPDF(), 200);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewEmp, form.joiningDate]);
 
   function set<K extends keyof LetterForm>(k: K, v: LetterForm[K]) {
     setForm(f => ({ ...f, [k]: v }));
@@ -259,12 +274,50 @@ export default function AppointmentLettersPage() {
     const emp = employees.find(e => e._id === id);
     if (emp) {
       setPreviewEmp(emp);
-      if (emp.designation) set('designation', emp.designation);
-      if (emp.department)  set('department',  emp.department);
+      if (emp.designation)  set('designation', emp.designation);
+      if (emp.department)   set('department',  emp.department);
       if (emp.workLocation) set('workLocation', emp.workLocation);
       const total = (emp.basicSalary || 0) + (emp.hra || 0) + (emp.specialAllowance || 0);
       if (total > 0) set('salary', total);
     }
+  }
+
+  function loadLetterIntoForm(lt: AppointmentLetter) {
+    const emp = typeof lt.employeeId === 'object'
+      ? (lt.employeeId as Employee)
+      : employees.find(e => e._id === lt.employeeId) ?? null;
+    if (!emp) return;
+    setPreviewEmp(emp);
+    setForm({
+      employeeId:     emp._id,
+      offerDate:      lt.offerDate ? lt.offerDate.slice(0, 10) : todayISO(),
+      joiningDate:    lt.joiningDate ? lt.joiningDate.slice(0, 10) : '',
+      designation:    lt.designation,
+      department:     lt.department,
+      salary:         lt.salary,
+      workLocation:   lt.workLocation,
+      probationPeriod:lt.probationPeriod,
+      hrName:         lt.hrName,
+      customTerms:    lt.customTerms,
+    });
+  }
+
+  function handleEdit(lt: AppointmentLetter) {
+    loadLetterIntoForm(lt);
+    setEditingId(lt._id);
+    setSaveMsg(''); setSaveErr('');
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setForm(BLANK_FORM);
+    setPreviewEmp(null);
+    setSaveMsg(''); setSaveErr('');
+  }
+
+  function handleHistoryDownload(lt: AppointmentLetter) {
+    loadLetterIntoForm(lt);
+    pendingDownload.current = true;
   }
 
   async function handleSave(e: FormEvent) {
@@ -274,8 +327,14 @@ export default function AppointmentLettersPage() {
     if (!form.designation) { setSaveErr('Enter designation'); return; }
     setSaving(true);
     try {
-      await adminApi.createAppointmentLetter({ ...form });
-      setSaveMsg('Letter saved successfully!');
+      if (editingId) {
+        await adminApi.updateAppointmentLetter(editingId, { ...form });
+        setSaveMsg('Letter updated successfully!');
+        setEditingId(null);
+      } else {
+        await adminApi.createAppointmentLetter({ ...form });
+        setSaveMsg('Letter saved successfully!');
+      }
       loadLetters();
     } catch (err: unknown) { setSaveErr(err instanceof Error ? err.message : 'Save failed'); }
     finally { setSaving(false); }
@@ -291,25 +350,70 @@ export default function AppointmentLettersPage() {
     window.print();
   }
 
+  async function doDownloadPDF() {
+    if (!previewEmp) return;
+    setDownloading(true);
+    try {
+      const el = document.getElementById('letter-screen-preview');
+      if (!el) return;
+
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF }   = await import('jspdf');
+
+      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW  = pageW;
+      const imgH  = (canvas.height * pageW) / canvas.width;
+
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+      } else {
+        let pos = 0;
+        let rem = imgH;
+        while (rem > 0) {
+          pdf.addImage(imgData, 'PNG', 0, pos, imgW, imgH);
+          rem -= pageH;
+          if (rem > 0) { pdf.addPage(); pos -= pageH; }
+        }
+      }
+
+      const empId = previewEmp.employeeId || previewEmp._id.slice(-6);
+      pdf.save(`STS-AppointmentLetter-${empId}-${form.joiningDate || form.offerDate}.pdf`);
+
+      // Mark as downloaded
+      if (editingId) {
+        adminApi.updateAppointmentLetter(editingId, { status: 'downloaded' } as Partial<AppointmentLetter>).catch(() => {});
+      }
+    } catch (err) {
+      console.error('[PDF download]', err);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('Delete this appointment letter?')) return;
-    try { await adminApi.deleteAppointmentLetter(id); loadLetters(); }
-    catch (e: unknown) { alert(e instanceof Error ? e.message : 'Error'); }
+    try {
+      await adminApi.deleteAppointmentLetter(id);
+      if (editingId === id) handleCancelEdit();
+      loadLetters();
+    } catch (e: unknown) { alert(e instanceof Error ? e.message : 'Error'); }
   }
 
-  function empName(letter: AppointmentLetter) {
-    if (typeof letter.employeeId === 'object' && letter.employeeId !== null) {
-      return (letter.employeeId as Employee).name;
-    }
+  function empName(lt: AppointmentLetter) {
+    if (typeof lt.employeeId === 'object' && lt.employeeId !== null) return (lt.employeeId as Employee).name;
     return '—';
   }
-
-  function empEid(letter: AppointmentLetter) {
-    if (typeof letter.employeeId === 'object' && letter.employeeId !== null) {
-      return (letter.employeeId as Employee).employeeId || '';
-    }
+  function empEid(lt: AppointmentLetter) {
+    if (typeof lt.employeeId === 'object' && lt.employeeId !== null) return (lt.employeeId as Employee).employeeId || '';
     return '';
   }
+
+  const canPreview = Boolean(previewEmp);
 
   return (
     <>
@@ -320,12 +424,22 @@ export default function AppointmentLettersPage() {
 
         {/* ── LEFT: Form ──────────────────────────────────────────────── */}
         <div style={{ width: 320, flexShrink: 0, borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', fontSize: 14, fontWeight: 600 }}>Generate Appointment Letter</div>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 14, fontWeight: 600 }}>
+              {editingId ? 'Edit Letter' : 'Generate Letter'}
+            </span>
+            {editingId && (
+              <button onClick={handleCancelEdit} style={{ ...btnSec, padding: '4px 10px', fontSize: 11 }}>
+                Cancel Edit
+              </button>
+            )}
+          </div>
+
           <form onSubmit={handleSave} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Employee *</label>
-              <select style={inp} value={form.employeeId} onChange={e => handleEmpChange(e.target.value)}>
+              <select style={inp} value={form.employeeId} onChange={e => handleEmpChange(e.target.value)} disabled={!!editingId}>
                 <option value="">— Select Employee —</option>
                 {employees.map(e => <option key={e._id} value={e._id}>{e.name} ({e.employeeId || e._id.slice(-6)})</option>)}
               </select>
@@ -383,15 +497,35 @@ export default function AppointmentLettersPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Additional Terms (optional)</label>
-              <textarea style={{ ...inp, resize: 'vertical', minHeight: 70 }} value={form.customTerms} onChange={e => set('customTerms', e.target.value)} placeholder="Any special conditions or notes..." />
+              <textarea style={{ ...inp, resize: 'vertical', minHeight: 64 }} value={form.customTerms} onChange={e => set('customTerms', e.target.value)} placeholder="Any special conditions…" />
             </div>
 
-            {saveMsg && <div style={{ padding: '8px 12px', background: '#dcfce7', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#166534' }}>{saveMsg}</div>}
             {saveErr && <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#991b1b' }}>{saveErr}</div>}
+            {saveMsg && <div style={{ padding: '8px 12px', background: '#dcfce7', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#166534' }}>{saveMsg}</div>}
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="submit" style={btnPrimary} disabled={saving}>{saving ? 'Saving…' : 'Save Letter'}</button>
-              <button type="button" style={btnSec} onClick={handlePrint} disabled={!previewEmp}>Print / PDF</button>
+            {/* Action buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" disabled={saving} style={{ ...btnPrimary, flex: 1, opacity: saving ? 0.6 : 1 }}>
+                  {saving ? 'Saving…' : editingId ? 'Update Letter' : 'Save Letter'}
+                </button>
+                <button type="button" onClick={handlePrint} disabled={!canPreview} style={{ ...btnSec, opacity: !canPreview ? 0.4 : 1 }}>
+                  Print
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={doDownloadPDF}
+                disabled={!canPreview || downloading}
+                style={{
+                  ...btnPrimary,
+                  background: canPreview && !downloading ? '#16a34a' : '#6b7280',
+                  opacity: !canPreview ? 0.4 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                {downloading ? 'Generating PDF…' : 'Download PDF'}
+              </button>
             </div>
 
           </form>
@@ -401,7 +535,7 @@ export default function AppointmentLettersPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Preview area */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: 20, background: 'var(--bg-2)' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24, background: '#e8e8e8' }}>
             {previewEmp ? (
               <div
                 id="letter-screen-preview"
@@ -419,12 +553,12 @@ export default function AppointmentLettersPage() {
           {/* History table */}
           <div style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-1)', flexShrink: 0, maxHeight: 260, overflowY: 'auto' }}>
             <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>History ({letterTotal})</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>History <span style={{ color: 'var(--fg-4)', fontWeight: 400, fontSize: 12 }}>({letterTotal})</span></span>
               {letterPages > 1 && (
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <button style={btnSec} disabled={letterPage <= 1} onClick={() => setLetterPage(p => p - 1)}>‹</button>
+                  <button style={{ ...btnSec, padding: '3px 10px', fontSize: 11 }} disabled={letterPage <= 1} onClick={() => setLetterPage(p => p - 1)}>Prev</button>
                   <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>{letterPage}/{letterPages}</span>
-                  <button style={btnSec} disabled={letterPage >= letterPages} onClick={() => setLetterPage(p => p + 1)}>›</button>
+                  <button style={{ ...btnSec, padding: '3px 10px', fontSize: 11 }} disabled={letterPage >= letterPages} onClick={() => setLetterPage(p => p + 1)}>Next</button>
                 </div>
               )}
             </div>
@@ -437,35 +571,49 @@ export default function AppointmentLettersPage() {
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-2)' }}>
-                    {['Employee','Emp ID','Designation','Offer Date','Joining Date','Salary','Status',''].map(h => (
-                      <th key={h} style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--fg-3)', borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap', fontSize: 11 }}>{h}</th>
+                    {['Employee','Emp ID','Designation','Offer Date','Joining Date','Salary','Status','Actions'].map(h => (
+                      <th key={h} style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--fg-4)', borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap', fontSize: 11 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {letters.map(lt => (
-                    <tr key={lt._id} style={{ borderBottom: '1px solid var(--line)' }}>
-                      <td style={{ padding: '7px 12px', fontWeight: 500 }}>{empName(lt)}</td>
-                      <td style={{ padding: '7px 12px', color: 'var(--fg-3)' }}>{empEid(lt) || '—'}</td>
-                      <td style={{ padding: '7px 12px' }}>{lt.designation}</td>
-                      <td style={{ padding: '7px 12px', color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>{fmtDate(lt.offerDate)}</td>
-                      <td style={{ padding: '7px 12px', color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>{fmtDate(lt.joiningDate)}</td>
-                      <td style={{ padding: '7px 12px' }}>₹{fmtINR(lt.salary)}</td>
-                      <td style={{ padding: '7px 12px' }}>
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 500,
-                          background: lt.status === 'sent' ? '#dcfce7' : lt.status === 'downloaded' ? '#dbeafe' : '#fef9c3',
-                          color:      lt.status === 'sent' ? '#166534' : lt.status === 'downloaded' ? '#1e40af' : '#854d0e',
-                        }}>{lt.status}</span>
-                      </td>
-                      <td style={{ padding: '7px 12px' }}>
-                        <button
-                          onClick={() => handleDelete(lt._id)}
-                          style={{ padding: '2px 8px', fontSize: 11, color: '#ef4444', background: 'transparent', border: '1px solid #fca5a5', borderRadius: 4, cursor: 'pointer' }}
-                        >Delete</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {letters.map(lt => {
+                    const isEditing = editingId === lt._id;
+                    return (
+                      <tr key={lt._id} style={{ borderBottom: '1px solid var(--line)', background: isEditing ? 'rgba(45,54,217,0.06)' : 'transparent' }}>
+                        <td style={{ padding: '7px 12px', fontWeight: 500 }}>{empName(lt)}</td>
+                        <td style={{ padding: '7px 12px', color: 'var(--fg-3)' }}>{empEid(lt) || '—'}</td>
+                        <td style={{ padding: '7px 12px' }}>{lt.designation}</td>
+                        <td style={{ padding: '7px 12px', color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>{fmtDate(lt.offerDate)}</td>
+                        <td style={{ padding: '7px 12px', color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>{fmtDate(lt.joiningDate)}</td>
+                        <td style={{ padding: '7px 12px' }}>₹{fmtINR(lt.salary)}</td>
+                        <td style={{ padding: '7px 12px' }}>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 500,
+                            background: lt.status === 'downloaded' ? '#dcfce7' : lt.status === 'sent' ? '#dbeafe' : '#fef9c3',
+                            color:      lt.status === 'downloaded' ? '#166534' : lt.status === 'sent' ? '#1e40af' : '#854d0e',
+                          }}>{lt.status}</span>
+                        </td>
+                        <td style={{ padding: '7px 12px' }}>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              onClick={() => handleEdit(lt)}
+                              style={{ ...btnSec, padding: '3px 8px', fontSize: 11, color: isEditing ? 'var(--accent)' : undefined }}
+                            >
+                              {isEditing ? 'Editing…' : 'Edit'}
+                            </button>
+                            <button
+                              onClick={() => handleHistoryDownload(lt)}
+                              style={{ padding: '3px 8px', fontSize: 11, color: '#16a34a', background: 'transparent', border: '1px solid #86efac', borderRadius: 4, cursor: 'pointer' }}
+                            >
+                              PDF
+                            </button>
+                            <button onClick={() => handleDelete(lt._id)} style={btnDanger}>Del</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

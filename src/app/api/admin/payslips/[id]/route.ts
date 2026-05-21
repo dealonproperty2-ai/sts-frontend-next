@@ -25,7 +25,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     await connectDb();
 
     const updates: Record<string, unknown> = {};
+    const numFields = ['workingDays','basicSalary','hra','specialAllowance','bonus','pfDeduction','professionalTax','otherDeductions'];
+    for (const f of numFields) {
+      if (body[f] !== undefined) updates[f] = Number(body[f]) || 0;
+    }
+    if (body.month)  updates.month  = body.month;
     if (body.status) updates.status = body.status;
+
+    // Recalculate derived fields if earnings/deductions changed
+    if (Object.keys(updates).some(k => numFields.includes(k))) {
+      const gross = (updates.basicSalary ?? body.basicSalary ?? 0) as number
+        + (updates.hra ?? body.hra ?? 0) as number
+        + (updates.specialAllowance ?? body.specialAllowance ?? 0) as number
+        + (updates.bonus ?? body.bonus ?? 0) as number;
+      const totalDed = (updates.pfDeduction ?? body.pfDeduction ?? 0) as number
+        + (updates.professionalTax ?? body.professionalTax ?? 0) as number
+        + (updates.otherDeductions ?? body.otherDeductions ?? 0) as number;
+      updates.grossSalary    = gross;
+      updates.totalDeductions = totalDed;
+      updates.netSalary      = gross - totalDed;
+    }
 
     const slip = await PaySlip.findByIdAndUpdate(params.id, { $set: updates }, { new: true }).lean();
     if (!slip) return NextResponse.json({ error: 'Not found' }, { status: 404 });

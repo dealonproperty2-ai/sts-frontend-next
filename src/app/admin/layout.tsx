@@ -111,11 +111,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Sidebar */}
         <aside className={`admin-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* Logo */}
-          <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-              STS Admin
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo3.png" alt="Step To Soft" style={{ height: 32, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--accent)', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                STS Admin
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 1 }}>Step To Soft</div>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 2 }}>Step To Soft</div>
           </div>
 
           {/* Nav */}
@@ -196,6 +200,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               ☰
             </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo3.png" alt="Step To Soft" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>STS Admin</span>
           </div>
           <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
