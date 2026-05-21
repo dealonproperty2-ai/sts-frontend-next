@@ -9,7 +9,7 @@ export default function Logo({ size = 40 }: { size?: number }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        // gap: '10px',
+        gap: '10px',
         textDecoration: 'none',
       }}
     >
@@ -31,7 +31,7 @@ export default function Logo({ size = 40 }: { size?: number }) {
           whiteSpace: 'nowrap',
         }}
       >
-        TEP <span style={{ color: 'var(--accent)' }}>TO</span> SOFT
+        STEP <span style={{ color: 'var(--accent)' }}>TO</span> SOFT
       </span>
     </Link>
   );

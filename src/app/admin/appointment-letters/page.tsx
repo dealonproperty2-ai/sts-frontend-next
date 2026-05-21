@@ -334,6 +334,8 @@ export default function AppointmentLettersPage() {
       } else {
         await adminApi.createAppointmentLetter({ ...form });
         setSaveMsg('Letter saved successfully!');
+        setForm(BLANK_FORM);
+        setPreviewEmp(null);
       }
       loadLetters();
     } catch (err: unknown) { setSaveErr(err instanceof Error ? err.message : 'Save failed'); }
@@ -341,7 +343,7 @@ export default function AppointmentLettersPage() {
   }
 
   function handlePrint() {
-    if (!previewEmp) return;
+    if (!previewEmp || !form.joiningDate) return;
     const el = document.getElementById('letter-screen-preview');
     if (!el) return;
     const printArea = document.getElementById('letter-print-area');

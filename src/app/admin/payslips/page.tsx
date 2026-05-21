@@ -328,6 +328,8 @@ export default function PayslipsPage() {
       } else {
         await adminApi.createPayslip({ ...form });
         setSaveMsg('Payslip saved successfully!');
+        setForm(BLANK_FORM);
+        setPreviewEmp(null);
       }
       loadSlips();
     } catch (err: unknown) { setSaveErr(err instanceof Error ? err.message : 'Save failed'); }

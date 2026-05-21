@@ -46,7 +46,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'bills');
+    // Use /tmp in production (Vercel filesystem is read-only outside /tmp)
+    const uploadDir = process.env.NODE_ENV === 'production'
+      ? path.join('/tmp', 'bills')
+      : path.join(process.cwd(), 'uploads', 'bills');
     await mkdir(uploadDir, { recursive: true });
 
     const rawExt = file.name.split('.').pop()?.toLowerCase() ?? '';
