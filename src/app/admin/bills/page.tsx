@@ -237,6 +237,7 @@ function FilePreview({
     );
   }
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={blobUrl}
       alt={fileName}
@@ -842,6 +843,7 @@ export default function BillsPage() {
                       alignItems: 'center', justifyContent: 'center',
                     }}>
                       {localPreview && uploadedFile.fileType.startsWith('image/') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={localPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-4)', textTransform: 'uppercase' }}>

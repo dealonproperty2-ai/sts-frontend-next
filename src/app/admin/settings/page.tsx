@@ -148,7 +148,7 @@ export default function SettingsPage() {
         {!user?.twoFactorEnabled ? (
           <>
             <p style={{ fontSize: 14, color: 'var(--fg-3)', marginTop: 0, lineHeight: 1.6 }}>
-              Add an extra layer of security to your account. You'll need an authenticator app like Google Authenticator or Authy.
+              Add an extra layer of security to your account. You&apos;ll need an authenticator app like Google Authenticator or Authy.
             </p>
 
             {tfaStep === 'idle' && (
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-                <button onClick={() => setTfaStep('verify')} style={btnPrimary}>I've scanned it →</button>
+                <button onClick={() => setTfaStep('verify')} style={btnPrimary}>I&apos;ve scanned it →</button>
               </div>
             )}
 

@@ -159,7 +159,7 @@ export default function AdminLoginPage() {
         {step === 'forgot' && (
           <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 13, color: 'var(--fg-3)', lineHeight: 1.6 }}>
-              Enter your email and we'll send a reset link if the account exists.
+              Enter your email and we&apos;ll send a reset link if the account exists.
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label htmlFor="forgot-email" style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-3)' }}>Email</label>
