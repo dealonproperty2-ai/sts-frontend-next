@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef, FormEvent } from 'react';
+import Image from 'next/image';
 import { adminApi, Bill, BillStats } from '@/lib/adminApi';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -237,12 +238,15 @@ function FilePreview({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={blobUrl}
-      alt={fileName}
-      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Image
+        src={blobUrl}
+        alt={fileName}
+        fill
+        unoptimized
+        style={{ objectFit: 'contain' }}
+      />
+    </div>
   );
 }
 
@@ -843,8 +847,7 @@ export default function BillsPage() {
                       alignItems: 'center', justifyContent: 'center',
                     }}>
                       {localPreview && uploadedFile.fileType.startsWith('image/') ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={localPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <Image src={localPreview} alt="preview" unoptimized width={72} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                       ) : (
                         <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-4)', textTransform: 'uppercase' }}>
                           {uploadedFile.fileType === 'application/pdf' ? 'PDF' : 'IMG'}
