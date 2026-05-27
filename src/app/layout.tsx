@@ -1,18 +1,26 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
-import Script from 'next/script';
 import { headers } from 'next/headers';
 import '../styles/globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { ThemeScript } from '@/components/ThemeScript';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { GoogleAnalytics } from '@/components/GoogleAnalytics';
+import {
+  SITE,
+  BASE_KEYWORDS,
+  buildOrganizationSchema,
+  buildLocalBusinessSchema,
+  buildWebSiteSchema,
+} from '@/lib/seo';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-sans',
+  preload: true,
 });
 
 const jetBrainsMono = JetBrains_Mono({
@@ -20,62 +28,92 @@ const jetBrainsMono = JetBrains_Mono({
   weight: ['400', '500', '600'],
   display: 'swap',
   variable: '--font-mono',
+  preload: false,
 });
 
-const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(SITE.url),
   title: {
-    default: 'Step To Soft — Software Engineering, Consulting & Outsourcing',
+    default: 'Step To Soft — Web Development, Software Engineering & IT Services',
     template: '%s | Step To Soft',
   },
   description:
-    'Step To Soft is a 25-engineer product studio in Asansol, India. Custom software, SaaS engineering, dedicated developer pods, cloud migration, QA, and a full-stack web bootcamp. Shipping worldwide since 2018.',
+    'Step To Soft is a leading web development and software engineering company in India. We offer custom software development, MERN stack, React.js, Node.js, mobile app development, UI/UX design, and digital transformation services worldwide since 2018.',
   keywords: [
-    'software engineering',
-    'custom software development',
-    'SaaS engineering',
-    'dedicated developer team',
-    'web development bootcamp',
-    'Asansol software company',
-    'India software outsourcing',
-    'Step To Soft',
-    'steptosoft',
+    ...BASE_KEYWORDS,
+    'web development company India',
+    'software engineering company',
+    'React.js development company India',
+    'Node.js development company',
+    'MERN stack development company',
+    'mobile app development India',
+    'UI/UX design company India',
+    'digital transformation company',
+    'custom software development India',
+    'software outsourcing company',
+    'IT services Asansol',
+    'West Bengal software company',
   ],
-  authors: [{ name: 'Step To Soft' }],
+  authors: [{ name: 'Step To Soft', url: SITE.url }],
   creator: 'Step To Soft',
   publisher: 'Step To Soft Pvt. Ltd.',
   applicationName: 'Step To Soft',
   category: 'technology',
+  classification: 'Software Development & IT Services',
   formatDetection: { email: false, address: false, telephone: false },
-  alternates: { canonical: '/' },
+  alternates: {
+    canonical: '/',
+    languages: { 'en-IN': '/', 'en-US': '/' },
+  },
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: SITE_URL,
+    url: SITE.url,
     siteName: 'Step To Soft',
-    title: 'Step To Soft — Software Engineering, Consulting & Outsourcing',
+    title: 'Step To Soft — Web Development, Software Engineering & IT Services',
     description:
-      'Custom software, SaaS engineering & dedicated developer pods. Built in Asansol, shipping worldwide since 2018.',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Step To Soft — Software studio' }],
+      'Custom software, MERN stack, React.js & Node.js development. Mobile apps, UI/UX design & digital transformation — built in Asansol, shipping worldwide since 2018.',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Step To Soft — Software Engineering & Web Development Company',
+        type: 'image/png',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Step To Soft — Software Engineering, Consulting & Outsourcing',
+    site: '@steptosoft',
+    creator: '@steptosoft',
+    title: 'Step To Soft — Web Development, Software Engineering & IT Services',
     description:
-      'Custom software, SaaS engineering & dedicated developer pods. Built in Asansol, shipping worldwide.',
-    images: ['/og.png'],
+      'Custom software, MERN stack, React.js & Node.js development. Mobile apps, UI/UX design & digital transformation.',
+    images: [{ url: '/opengraph-image', alt: 'Step To Soft' }],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }, { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' }],
-    shortcut: '/favicon.svg',
-    apple: '/icon.svg',
+    icon: [
+      { url: '/logo3.png', type: 'image/png', sizes: '32x32' },
+      { url: '/logo3.png', type: 'image/png', sizes: '16x16' },
+    ],
+    shortcut: '/logo3.png',
+    apple: { url: '/logo3.png', sizes: '180x180', type: 'image/png' },
+  },
+  verification: {
+    // Add your Google Search Console HTML-tag ID here
+    google: process.env.NEXT_PUBLIC_GSC_ID,
   },
 };
 
@@ -87,29 +125,6 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-};
-
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Step To Soft',
-  legalName: 'Step To Soft Pvt. Ltd.',
-  url: SITE_URL,
-  logo: `${SITE_URL}/logo.png`,
-  foundingDate: '2018',
-  email: 'hello@steptosoft.com',
-  telephone: '+91-3413556956',
-  address: { '@type': 'PostalAddress', addressLocality: 'Asansol', addressRegion: 'West Bengal', addressCountry: 'IN' },
-  sameAs: ['https://www.linkedin.com/company/steptosoft', 'https://github.com/steptosoft'],
-  description: 'A 25-engineer product studio offering custom software development, SaaS engineering, dedicated developer pods, and a full-stack web bootcamp.',
-};
-
-const websiteJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  url: SITE_URL,
-  name: 'Step To Soft',
-  potentialAction: { '@type': 'SearchAction', target: `${SITE_URL}/courses?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -125,14 +140,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <ThemeScript />
+        {/* Preconnect to external origins used at render time */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
       </head>
       <body>
+        <GoogleAnalytics />
         {isAdmin ? (
           children
         ) : (
           <>
-            <Script id="ld-org" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-            <Script id="ld-website" type="application/ld+json" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+            {/* Global structured data — present on every public page */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationSchema()) }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteSchema()) }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(buildLocalBusinessSchema()) }}
+            />
             <a href="#main" className="skip-link">
               Skip to content
             </a>

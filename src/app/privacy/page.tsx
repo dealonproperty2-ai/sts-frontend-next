@@ -6,6 +6,17 @@ export const metadata: Metadata = {
   description: 'How Step To Soft collects, uses, and protects your personal information.',
   alternates: { canonical: '/privacy' },
   robots: { index: true, follow: true },
+  openGraph: {
+    url: '/privacy',
+    type: 'website',
+    title: 'Privacy Policy — Step To Soft',
+    description: 'How Step To Soft collects, uses, and protects your personal information.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Privacy Policy — Step To Soft',
+    description: 'How Step To Soft collects, uses, and protects your personal information.',
+  },
 };
 
 export default function PrivacyPage() {

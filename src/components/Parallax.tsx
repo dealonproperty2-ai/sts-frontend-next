@@ -53,10 +53,11 @@ export const Reveal = ({
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [shown, setShown] = React.useState(false);
+  const [settled, setSettled] = React.useState(false);
+
   React.useEffect(() => {
     const el = ref.current;
     if (!el) { setShown(true); return; }
-    // Show immediately if element is already in viewport on mount
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight * 1.05) {
       setShown(true);
@@ -74,6 +75,14 @@ export const Reveal = ({
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  // Clear willChange after the animation finishes to release GPU layer
+  React.useEffect(() => {
+    if (!shown) return;
+    const id = setTimeout(() => setSettled(true), 800 + delay + 50);
+    return () => clearTimeout(id);
+  }, [shown, delay]);
+
   return (
     <div
       ref={ref}
@@ -81,7 +90,7 @@ export const Reveal = ({
         opacity: shown ? 1 : 0,
         transform: shown ? 'translateY(0)' : `translateY(${y}px)`,
         transition: `opacity 800ms cubic-bezier(.22,.7,.36,1) ${delay}ms, transform 800ms cubic-bezier(.22,.7,.36,1) ${delay}ms`,
-        willChange: 'opacity, transform',
+        willChange: settled ? 'auto' : 'opacity, transform',
         ...style,
       }}
     >
@@ -142,14 +151,16 @@ export const ScrollFloat = ({
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [t, setT] = React.useState(0);
+  const visibleRef = React.useRef(false);
+
   React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
     let raf = 0;
+
     const tick = () => {
-      const el = ref.current;
-      if (!el) {
-        raf = requestAnimationFrame(tick);
-        return;
-      }
+      if (!visibleRef.current) return;
       const r = el.getBoundingClientRect();
       const center = r.top + r.height / 2;
       const vh = window.innerHeight;
@@ -158,9 +169,26 @@ export const ScrollFloat = ({
       setT(offset * speed * 100 * k);
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) {
+          raf = requestAnimationFrame(tick);
+        } else {
+          cancelAnimationFrame(raf);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+    io.observe(el);
+
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, [speed]);
+
   return (
     <div
       ref={ref}

@@ -1,24 +1,57 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Script from 'next/script';
 import Icon from '@/components/Icon';
 import type { IconName } from '@/components/Icon';
 import { CornerTicks, Eyebrow, SectionHead, SpecLine } from '@/components/Primitives';
 import { Reveal, TiltCard } from '@/components/Parallax';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import CTABanner from '@/components/CTABanner';
 import { connectDb } from '@/server/db';
 import Course from '@/server/models/Course';
+import {
+  SITE,
+  BASE_KEYWORDS,
+  COURSE_KEYWORDS,
+  buildFAQSchema,
+  buildBreadcrumbSchema,
+} from '@/lib/seo';
 
 export const revalidate = 60;
 
-const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
-
 export const metadata: Metadata = {
-  title: 'Training & Courses — Step To Soft Academy',
+  title: 'Web Development Courses & Coding Bootcamp — MERN Stack, React.js, Node.js Training',
   description:
-    'Six live-cohort tracks: full-stack web dev bootcamp, frontend, backend, Angular, DevOps, and QA. Real projects, 1-on-1 mentors, job-placement support.',
+    'Step To Soft Academy offers live-cohort web development bootcamp and coding courses: MERN stack, React.js, Node.js, frontend, backend, Angular, DevOps & QA. Real projects, 1-on-1 mentors, job-placement support in India.',
+  keywords: [
+    ...BASE_KEYWORDS,
+    ...COURSE_KEYWORDS,
+    'coding bootcamp India',
+    'web development training India',
+    'online coding courses India',
+    'software development course India',
+    'MERN stack bootcamp',
+    'React.js bootcamp India',
+    'Node.js course India',
+    'full stack web development course',
+    'job-oriented coding course India',
+    'developer bootcamp with placement',
+    'learn web development online',
+    'Step To Soft Academy',
+  ],
   alternates: { canonical: '/courses' },
-  openGraph: { url: '/courses', title: 'Training & Courses — Step To Soft Academy' },
+  openGraph: {
+    url: '/courses',
+    type: 'website',
+    title: 'Web Development Courses & Coding Bootcamp — MERN Stack, React.js, Node.js | Step To Soft',
+    description:
+      'Six live-cohort tracks: MERN stack, React.js, Node.js, frontend, backend, Angular, DevOps & QA. Real projects, 1-on-1 mentors, job-placement support.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Web Development Courses & Coding Bootcamp — MERN Stack, React.js, Node.js | Step To Soft',
+    description:
+      'Six live-cohort tracks: MERN stack, React.js, Node.js, frontend, backend, Angular, DevOps & QA. Real projects, 1-on-1 mentors, job-placement support.',
+  },
 };
 
 export default async function CoursesPage() {
@@ -30,34 +63,87 @@ export default async function CoursesPage() {
   const coursesJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
+    name: 'Step To Soft Academy — Web Development & Coding Courses',
+    description: 'Live-cohort web development and coding courses including MERN stack, React.js, Node.js, frontend, backend, DevOps, and QA training.',
     itemListElement: courses.map((c, i) => ({
-      '@type': 'Course',
+      '@type': 'ListItem',
       position: i + 1,
-      name: c.title,
-      description: c.desc,
-      url: `${SITE_URL}/courses/${c.slug}`,
-      provider: {
-        '@type': 'Organization',
-        name: 'Step To Soft Academy',
-        sameAs: SITE_URL,
-      },
-      offers: {
-        '@type': 'Offer',
-        priceCurrency: 'INR',
-        price: c.priceInr,
-        category: 'Tuition',
+      item: {
+        '@type': 'Course',
+        '@id': `${SITE.url}/courses/${c.slug}`,
+        name: c.title,
+        description: c.desc,
+        url: `${SITE.url}/courses/${c.slug}`,
+        provider: {
+          '@type': 'Organization',
+          '@id': `${SITE.url}/#organization`,
+          name: 'Step To Soft Academy',
+          sameAs: SITE.url,
+        },
+        courseMode: ['online', 'onsite'],
+        inLanguage: 'en',
+        educationalLevel: 'Beginner to Advanced',
+        teaches: c.stack,
+        hasCourseInstance: {
+          '@type': 'CourseInstance',
+          courseMode: 'Online',
+          inLanguage: 'en',
+          courseSchedule: {
+            '@type': 'Schedule',
+            repeatFrequency: 'P1W',
+            repeatCount: c.weeks,
+          },
+        },
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'INR',
+          price: c.priceInr,
+          availability: 'https://schema.org/InStock',
+          category: 'Tuition',
+          url: `${SITE.url}/courses/${c.slug}`,
+        },
       },
     })),
   };
 
+  const coursesFaqJsonLd = buildFAQSchema([
+    {
+      q: 'What web development courses does Step To Soft Academy offer?',
+      a: 'Step To Soft Academy offers six live-cohort tracks: Full-Stack Web Development Bootcamp (MERN stack), Frontend Development (React.js), Backend Development (Node.js), Angular Development, DevOps Engineering, and QA Automation. All courses feature live classes, 1-on-1 mentorship, real projects, and job-placement support.',
+    },
+    {
+      q: 'Is the MERN stack bootcamp available online?',
+      a: 'Yes. All courses at Step To Soft Academy are available online with live video classes, recorded replays, and weekly 1-on-1 mentor sessions. Students from anywhere in India and abroad can enroll.',
+    },
+    {
+      q: 'What is the duration and fee for the full-stack web development bootcamp?',
+      a: 'The Full-Stack Web Development Bootcamp is 28 weeks (7 months) with 120+ live classes covering HTML, CSS, JavaScript, React.js, Node.js, and databases. Contact us or visit the course page for current pricing and EMI options.',
+    },
+    {
+      q: 'Does Step To Soft Academy provide job placement assistance?',
+      a: 'Yes. All cohorts include mock interviews, resume review, GitHub profile optimisation, and introductions to our hiring partner network. Our last three cohorts achieved a 78% placement rate within 90 days of graduation.',
+    },
+    {
+      q: 'Do I need prior coding experience to join the bootcamp?',
+      a: 'No prior coding experience is required for the Full-Stack Web Development Bootcamp. The curriculum starts from absolute basics — HTML & CSS — and progressively builds to full MERN stack development. Other tracks like DevOps and QA Automation may require some programming familiarity.',
+    },
+    {
+      q: 'Who teaches the courses at Step To Soft Academy?',
+      a: 'All courses are taught by working engineers from Step To Soft who are actively shipping client software. Mentors are senior engineers with 5+ years of industry experience in React.js, Node.js, DevOps, or QA.',
+    },
+  ]);
+
+  const breadcrumbJsonLd = buildBreadcrumbSchema([
+    { name: 'Home', url: SITE.url },
+    { name: 'Courses', url: `${SITE.url}/courses` },
+  ]);
+
   return (
     <div className="page-enter">
-      <Script
-        id="ld-courses"
-        type="application/ld+json"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(coursesJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(coursesJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(coursesFaqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+
       <section style={{ paddingTop: 160, paddingBottom: 80, position: 'relative', overflow: 'hidden' }}>
         <div className="blueprint" />
         <div
@@ -73,13 +159,14 @@ export default async function CoursesPage() {
           }}
         />
         <div className="container" style={{ position: 'relative' }}>
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Courses' }]} />
           <Eyebrow>Training · Step To Soft Academy</Eyebrow>
           <h1 style={{ marginTop: 24, maxWidth: 1000 }}>
-            Learn from the engineers who ship our client work.
+            Web Development Bootcamp & Coding Courses — MERN Stack, React.js, Node.js.
           </h1>
           <p className="lead" style={{ marginTop: 28 }}>
-            Six tracks, all live-cohort. Real projects, real mentors, real CI/CD. Job-placement
-            support after every cohort.
+            Six live-cohort tracks taught by the engineers who ship our client software. MERN stack,
+            React.js, Node.js, Angular, DevOps & QA — real projects, real mentors, job-placement support.
           </p>
           <div style={{ display: 'flex', gap: 14, marginTop: 36, flexWrap: 'wrap' }}>
             <Link href="/careers" className="btn btn-primary">
@@ -104,15 +191,7 @@ export default async function CoursesPage() {
               gap: 16,
             }}
           >
-            <span
-              className="mono"
-              style={{
-                fontSize: 11,
-                color: 'var(--fg-3)',
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-              }}
-            >
+            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
               {`// ${courses.length} active tracks · cohort starts Q3`}
             </span>
           </div>
@@ -123,28 +202,17 @@ export default async function CoursesPage() {
                   <Link href={`/courses/${c.slug}`} style={{ display: 'block' }}>
                     <div
                       className="card ticked"
-                      style={{
-                        padding: 28,
-                        height: '100%',
-                        minHeight: 380,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative',
-                      }}
+                      style={{ padding: 28, height: '100%', minHeight: 380, display: 'flex', flexDirection: 'column', position: 'relative' }}
                     >
                       <CornerTicks />
                       <div className="between" style={{ marginBottom: 24 }}>
                         <div
                           style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 12,
+                            width: 44, height: 44, borderRadius: 12,
                             border: '1px solid var(--accent-edge)',
                             background: 'var(--accent-soft)',
                             color: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}
                         >
                           <Icon name={c.icon as IconName} size={20} />
@@ -154,16 +222,8 @@ export default async function CoursesPage() {
                           {c.tag}
                         </span>
                       </div>
-                      <h3 style={{ marginBottom: 10, fontSize: 22 }}>{c.title}</h3>
-                      <div
-                        className="mono"
-                        style={{
-                          fontSize: 11,
-                          color: 'var(--fg-3)',
-                          letterSpacing: '0.1em',
-                          marginBottom: 14,
-                        }}
-                      >
+                      <h2 style={{ marginBottom: 10, fontSize: 22 }}>{c.title}</h2>
+                      <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.1em', marginBottom: 14 }}>
                         {c.dur}
                       </div>
                       <p style={{ fontSize: 14, color: 'var(--fg-3)', flex: 1 }}>{c.desc}</p>
@@ -173,15 +233,7 @@ export default async function CoursesPage() {
                         <SpecLine label="Fee" value={c.price} />
                       </div>
                       <div style={{ marginTop: 20 }}>
-                        <span
-                          className="btn btn-primary"
-                          style={{
-                            padding: '10px 14px',
-                            fontSize: 13,
-                            width: '100%',
-                            justifyContent: 'center',
-                          }}
-                        >
+                        <span className="btn btn-primary" style={{ padding: '10px 14px', fontSize: 13, width: '100%', justifyContent: 'center' }}>
                           Open course <Icon name="arrow" size={12} />
                         </span>
                       </div>
@@ -194,14 +246,7 @@ export default async function CoursesPage() {
         </div>
       </section>
 
-      <section
-        className="section"
-        style={{
-          background: 'var(--bg-1)',
-          borderTop: '1px solid var(--line)',
-          borderBottom: '1px solid var(--line)',
-        }}
-      >
+      <section className="section" style={{ background: 'var(--bg-1)', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
         <div className="container">
           <SectionHead eyebrow="How cohorts run" title="Live, mentored, project-based." />
           <div className="grid-4">
@@ -222,17 +267,7 @@ export default async function CoursesPage() {
                     minHeight: 200,
                   }}
                 >
-                  <div
-                    className="mono"
-                    style={{
-                      fontSize: 56,
-                      color: 'var(--accent)',
-                      opacity: 0.18,
-                      position: 'absolute',
-                      top: 14,
-                      right: 18,
-                    }}
-                  >
+                  <div className="mono" style={{ fontSize: 56, color: 'var(--accent)', opacity: 0.18, position: 'absolute', top: 14, right: 18 }}>
                     /{p.tag}
                   </div>
                   <h3 style={{ marginBottom: 10, fontSize: 20 }}>{p.title}</h3>

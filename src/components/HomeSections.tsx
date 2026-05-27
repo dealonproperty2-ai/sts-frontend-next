@@ -862,17 +862,20 @@ export const TestimonialSection = () => {
       />
       <div className="container" style={{ position: 'relative', textAlign: 'center', maxWidth: 880 }}>
         <Eyebrow>Field reports</Eyebrow>
-        <div aria-live="polite" aria-atomic="true" style={{ minHeight: 240, marginTop: 32, position: 'relative' }}>
+        <div aria-live="polite" aria-atomic="true" style={{ minHeight: 220, marginTop: 32, position: 'relative' }}>
           {TESTIMONIALS.map((t, idx) => (
             <div
               key={idx}
+              aria-hidden={i !== idx}
               style={{
                 opacity: i === idx ? 1 : 0,
                 transform: i === idx ? 'translateY(0)' : 'translateY(12px)',
-                transition: 'all 700ms cubic-bezier(.22,.7,.36,1)',
+                transition: 'opacity 700ms cubic-bezier(.22,.7,.36,1), transform 700ms cubic-bezier(.22,.7,.36,1)',
                 position: i === idx ? 'static' : 'absolute',
+                top: 0,
                 left: 0,
                 right: 0,
+                pointerEvents: i === idx ? 'auto' : 'none',
               }}
             >
               <p

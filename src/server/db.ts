@@ -21,6 +21,10 @@ export async function connectDb() {
       .connect(uri, {
         bufferCommands: false,
         serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 30_000,
+        connectTimeoutMS: 10_000,
+        maxPoolSize: 10,
+        minPoolSize: 2,
       })
       .then((m) => m)
       .catch((err) => {

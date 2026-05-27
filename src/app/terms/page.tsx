@@ -5,6 +5,18 @@ export const metadata: Metadata = {
   title: 'Terms of Use',
   description: 'Terms governing your use of the Step To Soft website and academy materials.',
   alternates: { canonical: '/terms' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    url: '/terms',
+    type: 'website',
+    title: 'Terms of Use — Step To Soft',
+    description: 'Terms governing your use of the Step To Soft website and academy materials.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Terms of Use — Step To Soft',
+    description: 'Terms governing your use of the Step To Soft website and academy materials.',
+  },
 };
 
 export default function TermsPage() {

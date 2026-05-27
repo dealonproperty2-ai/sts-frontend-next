@@ -1,55 +1,192 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { Eyebrow, SectionHead } from '@/components/Primitives';
 import { Reveal } from '@/components/Parallax';
 import Icon from '@/components/Icon';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import CareersForm from './CareersForm';
-
-const SITE_URL = process.env.SITE_URL || 'https://steptosoft.com';
+import { SITE, BASE_KEYWORDS, buildFAQSchema, buildBreadcrumbSchema } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Careers — Join the Step To Soft studio',
+  title: 'Careers at Step To Soft — React.js, Node.js & Software Engineering Jobs India',
   description:
-    'Six open roles: senior React, Node.js backend, DevOps, QA automation, product designer, bootcamp mentor. In-house, NDA-protected, on payroll. Apply in 60 seconds.',
+    'Join Step To Soft — a 25-engineer software development company in Asansol, India. Open roles in React.js, Node.js, DevOps, QA automation, UI/UX design, and web development bootcamp mentoring. In-house, NDA-protected, on payroll.',
+  keywords: [
+    ...BASE_KEYWORDS,
+    'software developer jobs India',
+    'React.js developer jobs India',
+    'Node.js developer jobs India',
+    'software engineering jobs Asansol',
+    'IT jobs West Bengal',
+    'DevOps engineer jobs India',
+    'QA automation jobs India',
+    'UI/UX designer jobs India',
+    'web developer jobs India',
+    'software company jobs India',
+    'coding jobs Asansol',
+    'full stack developer jobs India',
+  ],
   alternates: { canonical: '/careers' },
-  openGraph: { url: '/careers', title: 'Careers at Step To Soft' },
+  openGraph: {
+    url: '/careers',
+    type: 'website',
+    title: 'Careers at Step To Soft — React.js, Node.js & Software Engineering Jobs India',
+    description:
+      'Open roles: React.js, Node.js, DevOps, QA automation, UI/UX design & bootcamp mentoring. In-house, NDA-protected, on payroll at a growing India software studio.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Careers at Step To Soft — React.js, Node.js & Software Engineering Jobs India',
+    description:
+      'Open roles: React.js, Node.js, DevOps, QA automation, UI/UX design & bootcamp mentoring. In-house, NDA-protected, on payroll.',
+  },
 };
 
 const ROLES = [
-  { title: 'Senior React Engineer', dept: 'Engineering', loc: 'Asansol / Remote', type: 'Full-time' },
-  { title: 'Node.js Backend Engineer', dept: 'Engineering', loc: 'Asansol / Remote', type: 'Full-time' },
-  { title: 'DevOps Engineer (AWS)', dept: 'Infrastructure', loc: 'Asansol / Remote', type: 'Full-time' },
-  { title: 'QA Automation Lead', dept: 'Quality', loc: 'Asansol', type: 'Full-time' },
-  { title: 'Product Designer', dept: 'Design', loc: 'Remote', type: 'Full-time' },
-  { title: 'Bootcamp Mentor (Web Dev)', dept: 'Academy', loc: 'Asansol / Remote', type: 'Part-time' },
+  {
+    title: 'Senior React Engineer',
+    dept: 'Engineering',
+    loc: 'Asansol / Remote',
+    type: 'Full-time',
+    description: 'Build performant React.js and Next.js frontends for client products. 4+ years React experience required.',
+    baseSalaryMin: 800000,
+    baseSalaryMax: 1600000,
+  },
+  {
+    title: 'Node.js Backend Engineer',
+    dept: 'Engineering',
+    loc: 'Asansol / Remote',
+    type: 'Full-time',
+    description: 'Design and ship production Node.js APIs and microservices. PostgreSQL and MongoDB experience a plus.',
+    baseSalaryMin: 700000,
+    baseSalaryMax: 1400000,
+  },
+  {
+    title: 'DevOps Engineer (AWS)',
+    dept: 'Infrastructure',
+    loc: 'Asansol / Remote',
+    type: 'Full-time',
+    description: 'Own CI/CD pipelines, AWS infrastructure, and Terraform IaC for client deployments.',
+    baseSalaryMin: 900000,
+    baseSalaryMax: 1800000,
+  },
+  {
+    title: 'QA Automation Lead',
+    dept: 'Quality',
+    loc: 'Asansol',
+    type: 'Full-time',
+    description: 'Lead QA strategy and build Playwright/Cypress automation suites for our client portfolio.',
+    baseSalaryMin: 700000,
+    baseSalaryMax: 1300000,
+  },
+  {
+    title: 'Product Designer',
+    dept: 'Design',
+    loc: 'Remote',
+    type: 'Full-time',
+    description: 'Own end-to-end UI/UX design for web and mobile products — from user research to Figma handoff.',
+    baseSalaryMin: 600000,
+    baseSalaryMax: 1200000,
+  },
+  {
+    title: 'Bootcamp Mentor (Web Dev)',
+    dept: 'Academy',
+    loc: 'Asansol / Remote',
+    type: 'Part-time',
+    description: 'Mentor cohort students weekly in the Step To Soft Academy full-stack web development bootcamp.',
+    baseSalaryMin: 300000,
+    baseSalaryMax: 600000,
+  },
 ];
 
 const jobsJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
+  name: 'Open Positions at Step To Soft',
   itemListElement: ROLES.map((r, i) => ({
-    '@type': 'JobPosting',
+    '@type': 'ListItem',
     position: i + 1,
-    title: r.title,
-    employmentType: r.type === 'Full-time' ? 'FULL_TIME' : 'PART_TIME',
-    hiringOrganization: { '@type': 'Organization', name: 'Step To Soft', sameAs: SITE_URL },
-    jobLocation: {
-      '@type': 'Place',
-      address: { '@type': 'PostalAddress', addressLocality: 'Asansol', addressCountry: 'IN' },
+    item: {
+      '@type': 'JobPosting',
+      '@id': `${SITE.url}/careers#role-${i + 1}`,
+      title: r.title,
+      description: r.description,
+      employmentType: r.type === 'Full-time' ? 'FULL_TIME' : 'PART_TIME',
+      hiringOrganization: {
+        '@type': 'Organization',
+        '@id': `${SITE.url}/#organization`,
+        name: 'Step To Soft',
+        sameAs: SITE.url,
+        logo: `${SITE.url}/logo3.png`,
+      },
+      jobLocation: {
+        '@type': 'Place',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: SITE.address.street,
+          addressLocality: SITE.address.city,
+          addressRegion: SITE.address.region,
+          postalCode: SITE.address.postalCode,
+          addressCountry: SITE.address.country,
+        },
+      },
+      jobLocationType: r.loc.includes('Remote') ? 'TELECOMMUTE' : undefined,
+      applicantLocationRequirements: {
+        '@type': 'Country',
+        name: 'India',
+      },
+      baseSalary: {
+        '@type': 'MonetaryAmount',
+        currency: 'INR',
+        value: {
+          '@type': 'QuantitativeValue',
+          minValue: r.baseSalaryMin,
+          maxValue: r.baseSalaryMax,
+          unitText: 'YEAR',
+        },
+      },
+      datePosted: '2026-05-01',
+      validThrough: '2026-12-31',
+      url: `${SITE.url}/careers#apply`,
+      directApply: true,
     },
-    datePosted: new Date().toISOString().slice(0, 10),
-    url: `${SITE_URL}/careers#apply`,
   })),
 };
+
+const careersFaqJsonLd = buildFAQSchema([
+  {
+    q: 'What roles are currently open at Step To Soft?',
+    a: 'Step To Soft is currently hiring for Senior React Engineer, Node.js Backend Engineer, DevOps Engineer (AWS), QA Automation Lead, Product Designer, and Bootcamp Mentor (Web Dev). All roles are in-house, on payroll, and NDA-protected.',
+  },
+  {
+    q: 'Does Step To Soft hire remote software developers?',
+    a: 'Yes. Several roles at Step To Soft are available as Asansol / Remote or fully remote. Roles like Product Designer are fully remote. Engineering roles may require occasional in-person collaboration at our Asansol studio.',
+  },
+  {
+    q: 'What is the hiring process at Step To Soft?',
+    a: 'Our process is: (1) Application review within 5 business days, (2) A 60-minute pair programming session on a real problem from your CV — paid, (3) Two conversational rounds with humans, not a panel, (4) Decision within 10 days of first reply.',
+  },
+  {
+    q: 'What is the salary range for software developers at Step To Soft?',
+    a: 'Salary depends on role, experience, and engagement type. Our software engineering roles range from ₹7L to ₹18L per annum. We offer competitive salaries, performance bonuses, and a clear career path.',
+  },
+  {
+    q: 'Can I apply to the Step To Soft Academy bootcamp from the careers page?',
+    a: 'Yes. The same application form handles both job applications and course enrollment. Select your role of interest — including "Bootcamp Student" — and our team will route your application to the right person.',
+  },
+]);
+
+const breadcrumbJsonLd = buildBreadcrumbSchema([
+  { name: 'Home', url: SITE.url },
+  { name: 'Careers', url: `${SITE.url}/careers` },
+]);
 
 export default function CareersPage() {
   return (
     <div className="page-enter">
-      <Script
-        id="ld-jobs"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobsJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobsJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(careersFaqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+
       <section style={{ paddingTop: 160, paddingBottom: 80, position: 'relative', overflow: 'hidden' }}>
         <div className="blueprint" />
         <div
@@ -65,13 +202,14 @@ export default function CareersPage() {
           }}
         />
         <div className="container" style={{ position: 'relative' }}>
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Careers' }]} />
           <Eyebrow>Careers · Joining the studio</Eyebrow>
           <h1 style={{ marginTop: 24, maxWidth: 1000 }}>
-            Build software that real teams ship on. With humans you&apos;d want to grab a chai with.
+            React.js, Node.js & Software Engineering Jobs in India — Join the Step To Soft Studio.
           </h1>
           <p className="lead" style={{ marginTop: 28 }}>
-            We hire engineers, designers, and mentors. In-house, NDA-protected, on payroll. No
-            freelancers, no body-shops.
+            We hire React.js engineers, Node.js backend developers, DevOps engineers, QA leads, product designers, and bootcamp mentors.
+            In-house, NDA-protected, on payroll. No freelancers, no body-shops.
           </p>
         </div>
       </section>
@@ -82,31 +220,17 @@ export default function CareersPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {ROLES.map((r, i) => (
               <Reveal key={r.title} delay={i * 50}>
-                <div className="card role-row" style={{ padding: '24px 28px' }}>
-                  <div
-                    className="mono"
-                    style={{ fontSize: 12, color: 'var(--accent)', letterSpacing: '0.14em' }}
-                  >
+                <div className="card role-row" style={{ padding: '24px 28px' }} id={`role-${i + 1}`}>
+                  <div className="mono" style={{ fontSize: 12, color: 'var(--accent)', letterSpacing: '0.14em' }}>
                     R{String(i + 1).padStart(2, '0')}
                   </div>
                   <div>
-                    <h4 style={{ fontSize: 18, marginBottom: 4 }}>{r.title}</h4>
-                    <div
-                      className="mono"
-                      style={{ fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.1em' }}
-                    >
+                    <h2 style={{ fontSize: 18, marginBottom: 4 }}>{r.title}</h2>
+                    <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.1em' }}>
                       {r.dept.toUpperCase()}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      alignItems: 'center',
-                      color: 'var(--fg-2)',
-                      fontSize: 14,
-                    }}
-                  >
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--fg-2)', fontSize: 14 }}>
                     <Icon name="pin" size={14} /> {r.loc}
                   </div>
                   <div>
@@ -119,12 +243,7 @@ export default function CareersPage() {
                     <a
                       href="#apply"
                       className="link-u mono"
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--accent)',
-                        letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                      }}
+                      style={{ fontSize: 11, color: 'var(--accent)', letterSpacing: '0.14em', textTransform: 'uppercase' }}
                     >
                       Apply →
                     </a>

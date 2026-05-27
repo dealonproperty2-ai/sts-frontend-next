@@ -334,7 +334,8 @@ p {
     0 12px 30px -10px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow: hidden;
-  will-change: transform;
+  color: var(--fg);
+  will-change: auto;
 }
 
 .link-u {
@@ -669,9 +670,6 @@ select.input {
   .float-card { animation: none; }
 }
 
-/* Remove persistent GPU layer promotion from float-cards */
-.float-card { will-change: auto; }
-
 /* Hero stage tablet responsive — cards scale down nicely below 980px */
 @media (max-width: 980px) {
   .hero-stage .float-card {
@@ -690,10 +688,6 @@ select.input {
   border-color: rgba(10,10,15,0.1);
 }
 
-/* Ensure float-card text is always readable regardless of theme */
-.float-card {
-  color: var(--fg);
-}
 
 /* Better text balance for headings on mobile */
 @media (max-width: 640px) {
@@ -704,3 +698,29 @@ select.input {
     font-size: 16px;
   }
 }
+
+/* Reduce expensive blur effects on low-power / mobile devices */
+@media (max-width: 640px), (prefers-reduced-motion: reduce) {
+  .card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--card-bg);
+  }
+}
+
+/* Isolate glow/blur overlay layers from the compositor stack */
+.glow-orb {
+  pointer-events: none;
+  transform: translateZ(0);
+  contain: strict;
+}
+
+/* Scrollbar thin variant for admin tables */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-3) var(--bg);
+}
+.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: var(--bg); }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: var(--accent); }

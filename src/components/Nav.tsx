@@ -135,6 +135,7 @@ export default function Nav() {
             onClick={() => setOpen(!open)}
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
+            aria-controls="nav-mobile-menu"
             style={{
               width: 40,
               height: 40,
@@ -150,6 +151,9 @@ export default function Nav() {
       </div>
       {open && (
         <div
+          id="nav-mobile-menu"
+          role="navigation"
+          aria-label="Mobile"
           style={{
             background: 'var(--bg-1)',
             borderTop: '1px solid var(--line)',

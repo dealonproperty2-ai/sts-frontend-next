@@ -19,6 +19,7 @@ export default function Logo({ size = 40 }: { size?: number }) {
         width={size}
         height={size}
         alt="Step To Soft logo"
+        priority
       />
 
       {/* Text */}
