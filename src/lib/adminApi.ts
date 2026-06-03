@@ -64,6 +64,83 @@ export interface AdminCourse {
   updatedAt: string;
 }
 
+export interface AdminProject {
+  _id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  category: string;
+  projectUrl: string;
+  repoUrl: string;
+  clientName: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResumeExperience {
+  company: string;
+  role: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  current: boolean;
+  description: string;
+}
+
+export interface ResumeEducation {
+  institution: string;
+  degree: string;
+  field: string;
+  startDate: string;
+  endDate: string;
+  grade: string;
+}
+
+export interface ResumeProjectItem {
+  name: string;
+  description: string;
+  link: string;
+  technologies: string[];
+}
+
+export interface ResumeCertification {
+  name: string;
+  issuer: string;
+  date: string;
+}
+
+export interface ResumeSkillCategory {
+  label: string;
+  items: string[];
+}
+
+export type ResumeTemplate = 'classic' | 'modern' | 'minimal';
+
+export interface AdminResume {
+  _id: string;
+  fullName: string;
+  headline: string;
+  email: string;
+  phone: string;
+  location: string;
+  website: string;
+  linkedin: string;
+  github: string;
+  summary: string;
+  skills: string[];
+  skillCategories: ResumeSkillCategory[];
+  experience: ResumeExperience[];
+  education: ResumeEducation[];
+  projects: ResumeProjectItem[];
+  certifications: ResumeCertification[];
+  languages: string[];
+  template: ResumeTemplate;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StatsData {
   applications: Record<string, number> & { total: number };
   enquiries: Record<string, number> & { total: number };
@@ -423,6 +500,46 @@ export const adminApi = {
     }),
   deleteCourse: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/admin/courses/${id}`, { method: 'DELETE' }),
+
+  // ── Projects ──────────────────────────────────────────────────────────────
+  projects: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<AdminProject>>(
+      `/api/admin/projects${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  getProject: (id: string) =>
+    apiFetch<{ success: boolean; data: AdminProject }>(`/api/admin/projects/${id}`),
+  createProject: (body: Partial<AdminProject>) =>
+    apiFetch<{ success: boolean; data: AdminProject }>('/api/admin/projects', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateProject: (id: string, body: Partial<AdminProject>) =>
+    apiFetch<{ success: boolean; data: AdminProject }>(`/api/admin/projects/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteProject: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/projects/${id}`, { method: 'DELETE' }),
+
+  // ── Resumes ───────────────────────────────────────────────────────────────
+  resumes: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<AdminResume>>(
+      `/api/admin/resumes${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  getResume: (id: string) =>
+    apiFetch<{ success: boolean; data: AdminResume }>(`/api/admin/resumes/${id}`),
+  createResume: (body: Partial<AdminResume>) =>
+    apiFetch<{ success: boolean; data: AdminResume }>('/api/admin/resumes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateResume: (id: string, body: Partial<AdminResume>) =>
+    apiFetch<{ success: boolean; data: AdminResume }>(`/api/admin/resumes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteResume: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/resumes/${id}`, { method: 'DELETE' }),
 
   // ── Bills ─────────────────────────────────────────────────────────────────
   billStats: () =>

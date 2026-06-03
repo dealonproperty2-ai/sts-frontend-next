@@ -7,7 +7,7 @@ import { CornerTicks, Eyebrow, SectionHead, SpecLine } from '@/components/Primit
 import { Reveal, TiltCard } from '@/components/Parallax';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import CTABanner from '@/components/CTABanner';
-import { CURRICULUM_WEBDEV } from '@/lib/courses';
+import { CURRICULUM_WEBDEV, COURSES, type CourseView } from '@/lib/courses';
 import { connectDb } from '@/server/db';
 import Course from '@/server/models/Course';
 import { SITE, COURSE_KEYWORDS, buildFAQSchema, buildBreadcrumbSchema } from '@/lib/seo';
@@ -18,9 +18,17 @@ interface Params {
   params: { slug: string };
 }
 
-const getCourse = cache(async (slug: string) => {
-  await connectDb();
-  return Course.findOne({ slug, isActive: true }).lean();
+// Look the course up in MongoDB, falling back to the static catalog when the DB
+// is unavailable (no MONGODB_URI in dev, or a transient outage).
+const getCourse = cache(async (slug: string): Promise<CourseView | null> => {
+  try {
+    await connectDb();
+    const doc = await Course.findOne({ slug, isActive: true }).lean();
+    if (doc) return doc as unknown as CourseView;
+  } catch (err) {
+    console.warn('[courses/slug] DB unavailable, using static catalog:', (err as Error).message);
+  }
+  return COURSES.find((c) => c.slug === slug && c.isActive) ?? null;
 });
 
 export async function generateStaticParams() {

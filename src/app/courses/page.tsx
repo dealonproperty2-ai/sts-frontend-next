@@ -8,6 +8,7 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import CTABanner from '@/components/CTABanner';
 import { connectDb } from '@/server/db';
 import Course from '@/server/models/Course';
+import { COURSES, type CourseView } from '@/lib/courses';
 import {
   SITE,
   BASE_KEYWORDS,
@@ -17,6 +18,22 @@ import {
 } from '@/lib/seo';
 
 export const revalidate = 60;
+
+// Read active courses from MongoDB, falling back to the static catalog when the
+// DB is unavailable (no MONGODB_URI in dev, or a transient outage) so the page
+// renders instead of throwing.
+async function getCourses(): Promise<CourseView[]> {
+  try {
+    await connectDb();
+    const docs = await Course.find({ isActive: true })
+      .sort({ sortOrder: 1, createdAt: 1 })
+      .lean();
+    if (docs.length) return docs as unknown as CourseView[];
+  } catch (err) {
+    console.warn('[courses] DB unavailable, using static catalog:', (err as Error).message);
+  }
+  return COURSES;
+}
 
 export const metadata: Metadata = {
   title: 'Web Development Courses & Coding Bootcamp — MERN Stack, React.js, Node.js Training',
@@ -55,10 +72,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursesPage() {
-  await connectDb();
-  const courses = await Course.find({ isActive: true })
-    .sort({ sortOrder: 1, createdAt: 1 })
-    .lean();
+  const courses = await getCourses();
 
   const coursesJsonLd = {
     '@context': 'https://schema.org',
@@ -197,7 +211,7 @@ export default async function CoursesPage() {
           </div>
           <div className="grid-3">
             {courses.map((c, i) => (
-              <Reveal key={String(c._id)} delay={i * 60}>
+              <Reveal key={c.slug} delay={i * 60}>
                 <TiltCard max={5}>
                   <Link href={`/courses/${c.slug}`} style={{ display: 'block' }}>
                     <div

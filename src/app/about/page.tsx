@@ -41,8 +41,8 @@ export const metadata: Metadata = {
 };
 
 const TEAM = [
-  { name: 'Arjun Banerjee', role: 'Founder · CEO', img: 'founder.jpg', jobTitle: 'Chief Executive Officer' },
-  { name: 'Priya Sen', role: 'Director · Engineering', img: 'director.jpg', jobTitle: 'Director of Engineering' },
+  { name: 'Jamil Akhter', role: 'Founder · CEO', img: 'founder.jpg', jobTitle: 'Chief Executive Officer' },
+  { name: 'Farhat Naaz', role: 'Director · Engineering', img: 'director.jpg', jobTitle: 'Director of Engineering' },
   { name: 'Rohan Das', role: 'Tech Lead', img: 'team1.jpg', jobTitle: 'Technical Lead' },
   { name: 'Anika Roy', role: 'Lead Designer', img: 'team2.jpg', jobTitle: 'Lead UI/UX Designer' },
   { name: 'Vikram Iyer', role: 'Senior Engineer', img: 'team3.jpg', jobTitle: 'Senior Software Engineer' },

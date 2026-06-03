@@ -1,3 +1,23 @@
+const isDev = process.env.NODE_ENV !== 'production';
+
+// `next dev` (Fast Refresh + webpack eval devtool) requires 'unsafe-eval' and a
+// websocket connection for HMR. Production bundles use neither, so we keep the
+// policy strict there and only relax it in development.
+const scriptSrc = [
+  "script-src 'self' 'unsafe-inline'",
+  isDev ? "'unsafe-eval'" : '',
+  'https://www.googletagmanager.com https://www.google-analytics.com',
+]
+  .filter(Boolean)
+  .join(' ');
+
+const connectSrc = [
+  "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+  isDev ? 'ws: http://localhost:* ws://localhost:*' : '',
+]
+  .filter(Boolean)
+  .join(' ');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -34,11 +54,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+              scriptSrc,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https:",
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+              connectSrc,
               "frame-src 'self' https://www.google.com",
               "object-src 'none'",
               "base-uri 'self'",

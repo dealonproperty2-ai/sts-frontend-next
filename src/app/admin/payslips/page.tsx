@@ -42,14 +42,17 @@ function PayslipDoc({ emp, form, gross, totalDed, net, printDate }: PayslipDocPr
   const thStyle: React.CSSProperties = { padding: '6px 10px', background: '#1a1a2e', color: '#fff', fontWeight: 600, fontSize: 11, textAlign: 'left', border: tblBorder };
   const tdStyle: React.CSSProperties = { padding: '6px 10px', fontSize: 11, border: tblBorder, color: '#111' };
   const tdAmt: React.CSSProperties  = { ...tdStyle, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+  // Employee-info cells: keep every label and value on a single line (no mid-word breaks).
+  const infoLabel: React.CSSProperties = { padding: '4px 6px', color: '#555', whiteSpace: 'nowrap' };
+  const infoValue: React.CSSProperties = { padding: '4px 6px', fontWeight: 500, whiteSpace: 'nowrap' };
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', fontSize: 12, width: '100%', maxWidth: 750, margin: '0 auto' }}>
-      {/* Letterhead */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '3px solid #1a1a2e', paddingBottom: 10, marginBottom: 14 }}>
+      {/* Letterhead — logo pinned left, company name + address centered across the full width */}
+      <div style={{ position: 'relative', borderBottom: '3px solid #1a1a2e', paddingBottom: 10, marginBottom: 14 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo3.png" alt="Step To Soft" height={44} style={{ objectFit: 'contain' }} />
-        <div style={{ textAlign: 'right' }}>
+        <img src="/logo3.png" alt="Step To Soft" height={44} style={{ objectFit: 'contain', position: 'absolute', left: 0, top: 0 }} />
+        <div style={{ textAlign: 'center', minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.02em' }}>{COMPANY_NAME}</div>
           <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>Web Module-21, Asansol Webel IT Park, Asansol – 713305, WB</div>
         </div>
@@ -64,44 +67,52 @@ function PayslipDoc({ emp, form, gross, totalDed, net, printDate }: PayslipDocPr
 
       {/* Employee info grid */}
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 11 }}>
+        <colgroup>
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '19%' }} />
+          <col style={{ width: '16%' }} />
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '20%' }} />
+        </colgroup>
         <tbody>
           <tr>
-            <td style={{ padding: '4px 6px', color: '#555', width: '16%' }}>Date</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500, width: '17%' }}>: {printDate}</td>
-            <td style={{ padding: '4px 6px', color: '#555', width: '20%' }}>PF Account No.</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500, width: '23%' }}>: {emp.pfNumber || '—'}</td>
-            <td style={{ padding: '4px 6px', color: '#555', width: '10%' }}>Bank Name</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.bankName || '—'}</td>
+            <td style={infoLabel}>Date</td>
+            <td style={infoValue}>: {printDate}</td>
+            <td style={infoLabel}>PF Account No.</td>
+            <td style={infoValue}>: {emp.pfNumber || '—'}</td>
+            <td style={infoLabel}>Bank Name</td>
+            <td style={infoValue}>: {emp.bankName || '—'}</td>
           </tr>
           <tr>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Employee Name</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.name}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Employee Number</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.employeeId || '—'}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Location</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.workLocation || '—'}</td>
+            <td style={infoLabel}>Employee Name</td>
+            <td style={infoValue}>: {emp.name}</td>
+            <td style={infoLabel}>Employee Number</td>
+            <td style={infoValue}>: {emp.employeeId || '—'}</td>
+            <td style={infoLabel}>Location</td>
+            <td style={infoValue}>: {emp.workLocation || '—'}</td>
           </tr>
           <tr>
-            <td style={{ padding: '4px 6px', color: '#555' }}>PAN No</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.panNumber || '—'}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>UAN Number</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.uanNumber || '—'}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Branch Name</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.branchName || '—'}</td>
+            <td style={infoLabel}>PAN No</td>
+            <td style={infoValue}>: {emp.panNumber || '—'}</td>
+            <td style={infoLabel}>UAN Number</td>
+            <td style={infoValue}>: {emp.uanNumber || '—'}</td>
+            <td style={infoLabel}>Branch Name</td>
+            <td style={infoValue}>: {emp.branchName || '—'}</td>
           </tr>
           <tr>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Designation</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.designation}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Account No</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.accountNumber || '—'}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Branch Code</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.branchCode || '—'}</td>
+            <td style={infoLabel}>Designation</td>
+            <td style={infoValue}>: {emp.designation}</td>
+            <td style={infoLabel}>Account No</td>
+            <td style={infoValue}>: {emp.accountNumber || '—'}</td>
+            <td style={infoLabel}>Branch Code</td>
+            <td style={infoValue}>: {emp.branchCode || '—'}</td>
           </tr>
           <tr>
-            <td style={{ padding: '4px 6px', color: '#555' }}>Worked Days</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {form.workingDays}</td>
-            <td style={{ padding: '4px 6px', color: '#555' }}>IFSC Code</td>
-            <td style={{ padding: '4px 6px', fontWeight: 500 }}>: {emp.ifscCode || '—'}</td>
+            <td style={infoLabel}>Worked Days</td>
+            <td style={infoValue}>: {form.workingDays}</td>
+            <td style={infoLabel}>IFSC Code</td>
+            <td style={infoValue}>: {emp.ifscCode || '—'}</td>
             <td></td><td></td>
           </tr>
         </tbody>
