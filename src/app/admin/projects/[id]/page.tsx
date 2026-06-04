@@ -58,6 +58,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </h1>
         {project && (
           <>
+            <CopyButton
+              text={
+                `Title: ${project.title}\n` +
+                `Technologies: ${project.technologies.join(', ')}\n` +
+                `Description: ${project.description}`
+              }
+              label="title, technologies and description"
+              face="Copy all"
+            />
             <Link href={`/admin/projects?edit=${project._id}`} style={{ ...btnSecondary, textDecoration: 'none' }}>Edit</Link>
             <button onClick={() => { setDeleteOpen(true); setDeleteError(''); }} style={btnDangerFull}>Delete</button>
           </>
@@ -172,7 +181,7 @@ function Section({ title, children, copyText }: { title: string; children: React
 
 // Copies `text` to the clipboard with brief "Copied" feedback. Falls back to a
 // hidden textarea + execCommand when the async Clipboard API is unavailable.
-function CopyButton({ text, label }: { text: string; label: string }) {
+function CopyButton({ text, label, face = 'Copy' }: { text: string; label: string; face?: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -214,7 +223,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
         whiteSpace: 'nowrap', transition: 'color var(--t-fast), border-color var(--t-fast)',
       }}
     >
-      {copied ? '✓ Copied' : '⧉ Copy'}
+      {copied ? '✓ Copied' : `⧉ ${face}`}
     </button>
   );
 }
