@@ -418,10 +418,10 @@ export default function PayslipsPage() {
       <style>{PRINT_CSS}</style>
       <div id="payslip-print-area" />
 
-      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      <div className="admin-split" style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
         {/* ── LEFT: Form ─────────────────────────────────────────────── */}
-        <div style={{ width: 340, flexShrink: 0, borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div className="admin-split-side" style={{ width: 340, flexShrink: 0, borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 14, fontWeight: 600 }}>
               {editingId ? 'Edit Payslip' : 'Generate Payslip'}
@@ -513,7 +513,7 @@ export default function PayslipsPage() {
         </div>
 
         {/* ── RIGHT: Preview + History ──────────────────────────────── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="admin-split-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Document preview */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 24, background: '#e8e8e8' }}>

@@ -78,6 +78,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             <div style={card}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--fg)', flex: 1, minWidth: 200 }}>{project.title}</h2>
+                <CopyButton text={project.title} label="title" />
                 <span style={{
                   padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600,
                   background: project.isActive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.1)',
@@ -97,14 +98,14 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             </div>
 
             {/* Description */}
-            <Section title="Description">
+            <Section title="Description" copyText={project.description}>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: 'var(--fg-2)', whiteSpace: 'pre-wrap' }}>
                 {project.description}
               </p>
             </Section>
 
             {/* Technologies */}
-            <Section title={`Technologies / Skills (${project.technologies.length})`}>
+            <Section title={`Technologies / Skills (${project.technologies.length})`} copyText={project.technologies.join(', ')}>
               {project.technologies.length ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {project.technologies.map(t => (
@@ -155,14 +156,66 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, copyText }: { title: string; children: React.ReactNode; copyText?: string }) {
   return (
     <div style={card}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--fg-4)', marginBottom: 12 }}>
-        {title}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--fg-4)' }}>
+          {title}
+        </div>
+        {copyText ? <CopyButton text={copyText} label={title} /> : null}
       </div>
       {children}
     </div>
+  );
+}
+
+// Copies `text` to the clipboard with brief "Copied" feedback. Falls back to a
+// hidden textarea + execCommand when the async Clipboard API is unavailable.
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    if (!text) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      disabled={!text}
+      aria-label={`Copy ${label}`}
+      title={`Copy ${label}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+        padding: '5px 10px', fontSize: 12, fontWeight: 500,
+        color: copied ? '#4ade80' : 'var(--fg-3)',
+        background: 'var(--bg-2)',
+        border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'var(--line)'}`,
+        borderRadius: 'var(--r-sm)', cursor: text ? 'pointer' : 'not-allowed',
+        whiteSpace: 'nowrap', transition: 'color var(--t-fast), border-color var(--t-fast)',
+      }}
+    >
+      {copied ? '✓ Copied' : '⧉ Copy'}
+    </button>
   );
 }
 
@@ -211,5 +264,5 @@ const modalOverlay: React.CSSProperties = {
 };
 const modalBox: React.CSSProperties = {
   background: 'var(--bg-1)', border: '1px solid var(--line-strong)',
-  borderRadius: 'var(--r-md)', padding: '24px', width: 380,
+  borderRadius: 'var(--r-md)', padding: '24px', maxWidth: 'calc(100vw - 24px)', boxSizing: 'border-box', width: 380,
 };

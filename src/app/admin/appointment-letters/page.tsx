@@ -422,10 +422,10 @@ export default function AppointmentLettersPage() {
       <style>{PRINT_CSS}</style>
       <div id="letter-print-area" />
 
-      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      <div className="admin-split" style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
         {/* ── LEFT: Form ──────────────────────────────────────────────── */}
-        <div style={{ width: 320, flexShrink: 0, borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div className="admin-split-side" style={{ width: 320, flexShrink: 0, borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 14, fontWeight: 600 }}>
               {editingId ? 'Edit Letter' : 'Generate Letter'}
@@ -534,7 +534,7 @@ export default function AppointmentLettersPage() {
         </div>
 
         {/* ── RIGHT: Preview + History ─────────────────────────────────── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="admin-split-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Preview area */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 24, background: '#e8e8e8' }}>

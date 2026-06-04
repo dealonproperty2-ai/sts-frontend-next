@@ -17,8 +17,17 @@ function readTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Lazy initialiser reads the value already set by ThemeScript — no flash
-  const [theme, setTheme] = React.useState<Theme>(readTheme);
+  // Initialise to the same value the server renders ('dark') so the first client
+  // render matches the SSR output — otherwise reading the persisted theme here
+  // would diverge from the server and trigger a hydration mismatch (the Nav
+  // toggle icon differs). After mount we adopt the real theme that ThemeScript
+  // already applied to <html> from localStorage. The page background never
+  // flashes (ThemeScript sets data-theme pre-paint); only the toggle icon settles.
+  const [theme, setTheme] = React.useState<Theme>('dark');
+
+  React.useEffect(() => {
+    setTheme(readTheme());
+  }, []);
 
   const toggle = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';

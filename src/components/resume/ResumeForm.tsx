@@ -147,7 +147,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 820, margin: '0 auto', paddingBottom: 40 }}>
       {/* Basics */}
       <Card title="Basic Information">
-        <div style={grid2}>
+        <div className="rf-grid-2" style={grid2}>
           <Field label="Full Name" required><input required value={form.fullName} onChange={txt('fullName')} style={input} /></Field>
           <Field label="Headline / Target Role"><input value={form.headline} onChange={txt('headline')} placeholder="e.g. Full-Stack Developer" style={input} /></Field>
           <Field label="Email"><input type="email" value={form.email} onChange={txt('email')} style={input} /></Field>
@@ -183,7 +183,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
         </div>
         {form.skillCategories.map((c, i) => (
           <Row key={i} onRemove={form.skillCategories.length > 1 ? () => removeRow('skillCategories', i) : undefined}>
-            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 12 }}>
+            <div className="rf-grid-label" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 12 }}>
               <Field label="Category"><input list="skill-category-suggestions" value={c.label} onChange={ev => updateRow<SkillCatForm>('skillCategories', i, { label: ev.target.value })} placeholder="Programming Languages" style={input} /></Field>
               <Field label="Skills (comma-separated)"><input value={c.items} onChange={ev => updateRow<SkillCatForm>('skillCategories', i, { items: ev.target.value })} placeholder="HTML5, CSS3, JavaScript" style={input} /></Field>
             </div>
@@ -200,7 +200,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
       <Card title="Experience" onAdd={() => addRow('experience', BLANK_EXP)} addLabel="+ Add experience">
         {form.experience.map((e, i) => (
           <Row key={i} onRemove={form.experience.length > 1 ? () => removeRow('experience', i) : undefined}>
-            <div style={grid2}>
+            <div className="rf-grid-2" style={grid2}>
               <Field label="Role"><input value={e.role} onChange={ev => updateRow<ResumeExperience>('experience', i, { role: ev.target.value })} style={input} /></Field>
               <Field label="Company"><input value={e.company} onChange={ev => updateRow<ResumeExperience>('experience', i, { company: ev.target.value })} style={input} /></Field>
               <Field label="Location"><input value={e.location} onChange={ev => updateRow<ResumeExperience>('experience', i, { location: ev.target.value })} style={input} /></Field>
@@ -219,7 +219,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
       <Card title="Education" onAdd={() => addRow('education', BLANK_EDU)} addLabel="+ Add education">
         {form.education.map((e, i) => (
           <Row key={i} onRemove={form.education.length > 1 ? () => removeRow('education', i) : undefined}>
-            <div style={grid2}>
+            <div className="rf-grid-2" style={grid2}>
               <Field label="Degree"><input value={e.degree} onChange={ev => updateRow<ResumeEducation>('education', i, { degree: ev.target.value })} placeholder="B.Tech" style={input} /></Field>
               <Field label="Field of study"><input value={e.field} onChange={ev => updateRow<ResumeEducation>('education', i, { field: ev.target.value })} placeholder="Computer Science" style={input} /></Field>
               <Field label="Institution"><input value={e.institution} onChange={ev => updateRow<ResumeEducation>('education', i, { institution: ev.target.value })} style={input} /></Field>
@@ -235,7 +235,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
       <Card title="Projects" onAdd={() => addRow('projects', BLANK_PROJ)} addLabel="+ Add project">
         {form.projects.map((p, i) => (
           <Row key={i} onRemove={form.projects.length > 1 ? () => removeRow('projects', i) : undefined}>
-            <div style={grid2}>
+            <div className="rf-grid-2" style={grid2}>
               <Field label="Project name"><input value={p.name} onChange={ev => updateRow<ProjForm>('projects', i, { name: ev.target.value })} style={input} /></Field>
               <Field label="Link"><input value={p.link} onChange={ev => updateRow<ProjForm>('projects', i, { link: ev.target.value })} placeholder="https://…" style={input} /></Field>
             </div>
@@ -253,7 +253,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
       <Card title="Certifications" onAdd={() => addRow('certifications', BLANK_CERT)} addLabel="+ Add certification">
         {form.certifications.map((c, i) => (
           <Row key={i} onRemove={form.certifications.length > 1 ? () => removeRow('certifications', i) : undefined}>
-            <div style={grid3}>
+            <div className="rf-grid-3" style={grid3}>
               <Field label="Name"><input value={c.name} onChange={ev => updateRow<ResumeCertification>('certifications', i, { name: ev.target.value })} style={input} /></Field>
               <Field label="Issuer"><input value={c.issuer} onChange={ev => updateRow<ResumeCertification>('certifications', i, { issuer: ev.target.value })} style={input} /></Field>
               <Field label="Date"><input value={c.date} onChange={ev => updateRow<ResumeCertification>('certifications', i, { date: ev.target.value })} placeholder="2024" style={input} /></Field>

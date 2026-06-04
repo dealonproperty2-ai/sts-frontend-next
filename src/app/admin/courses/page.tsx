@@ -368,5 +368,5 @@ const modalOverlay: React.CSSProperties = {
 };
 const modalBox: React.CSSProperties = {
   background: 'var(--bg-1)', border: '1px solid var(--line-strong)',
-  borderRadius: 'var(--r-md)', padding: '24px', width: 340,
+  borderRadius: 'var(--r-md)', padding: '24px', maxWidth: 'calc(100vw - 24px)', boxSizing: 'border-box', width: 340,
 };

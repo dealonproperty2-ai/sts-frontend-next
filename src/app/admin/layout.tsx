@@ -19,6 +19,28 @@ const adminLayoutStyle = `
     .admin-sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.4); }
     .admin-topbar { display: flex !important; }
   }
+
+  /* ── Mobile / tablet responsiveness ──────────────────────────────────── */
+  /* Split-pane pages (payslips, appointment letters): stack form above preview */
+  @media (max-width: 860px) {
+    .admin-split { flex-direction: column !important; overflow-y: auto !important; }
+    .admin-split-side {
+      width: 100% !important; flex: 0 0 auto !important; overflow: visible !important;
+      border-right: none !important; border-bottom: 1px solid var(--line) !important;
+    }
+    .admin-split-main { flex: 0 0 auto !important; overflow: visible !important; min-height: 80vh; }
+  }
+  /* Wide data tables scroll horizontally inside their container instead of squishing */
+  @media (max-width: 768px) {
+    .admin-main table:not(.no-min) { min-width: 640px; }
+  }
+  @media (max-width: 600px) {
+    .admin-main table th, .admin-main table td { padding-left: 12px !important; padding-right: 12px !important; }
+  }
+  /* Form grids collapse to a single column on small screens */
+  @media (max-width: 640px) {
+    .rf-grid-2, .rf-grid-3, .rf-grid-label { grid-template-columns: 1fr !important; }
+  }
 `;
 
 const NAV = [
