@@ -60,20 +60,29 @@ const EmployeeSchema = new Schema<IEmployee>(
 EmployeeSchema.index({ deletedAt: 1 });
 EmployeeSchema.index({ name: 'text', email: 'text', designation: 'text', department: 'text' });
 
-// Auto-generate employeeId before saving if not set
+// Auto-generate employeeId before saving when the admin leaves it blank.
+// Sequence is derived from the highest existing STS-number (custom/manual ids are
+// ignored so they never skew it), then probed forward to skip any collision.
 EmployeeSchema.pre('save', async function (next) {
   if (this.employeeId) return next();
   try {
-    const last = await (this.constructor as mongoose.Model<IEmployee>)
-      .findOne({ employeeId: { $exists: true, $ne: '' } })
-      .sort({ createdAt: -1 })
+    const Model = this.constructor as mongoose.Model<IEmployee>;
+    // Zero-padded STS ids sort lexicographically the same as numerically.
+    const last = await Model.findOne({ employeeId: /^STS\d+$/ })
+      .sort({ employeeId: -1 })
       .lean();
     let seq = 1;
     if (last?.employeeId) {
-      const num = parseInt(last.employeeId.replace(/\D/g, ''), 10);
+      const num = parseInt(last.employeeId.slice(3), 10);
       if (!isNaN(num)) seq = num + 1;
     }
-    this.employeeId = 'STS' + String(seq).padStart(7, '0');
+    let candidate = 'STS' + String(seq).padStart(7, '0');
+    // Guard against gaps / races where the next number already exists.
+    while (await Model.exists({ employeeId: candidate })) {
+      seq += 1;
+      candidate = 'STS' + String(seq).padStart(7, '0');
+    }
+    this.employeeId = candidate;
   } catch {
     // non-fatal — admin can set it manually
   }

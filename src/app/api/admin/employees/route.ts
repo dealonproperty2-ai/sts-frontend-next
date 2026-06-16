@@ -48,6 +48,8 @@ export async function POST(req: Request) {
     await connectDb();
 
     const emp = await Employee.create({
+      // Admin-supplied employee number; blank falls back to auto-generation (pre-save hook).
+      employeeId:      body.employeeId?.trim() || undefined,
       name:            body.name?.trim(),
       fatherName:      body.fatherName?.trim() ?? '',
       email:           body.email?.trim().toLowerCase() ?? '',
@@ -73,6 +75,9 @@ export async function POST(req: Request) {
     audit({ adminId: auth.payload.id, adminEmail: auth.payload.email ?? '', action: 'CREATE', resource: 'employee', resourceId: String(emp._id), ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() });
     return NextResponse.json({ data: emp }, { status: 201 });
   } catch (err) {
+    if ((err as { code?: number }).code === 11000) {
+      return NextResponse.json({ error: 'That employee number is already in use' }, { status: 409 });
+    }
     console.error('[employees POST]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

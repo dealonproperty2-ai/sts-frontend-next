@@ -186,6 +186,10 @@ export default function EmployeesPage() {
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Personal Information</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Employee Number">
+                    <input style={inp} value={form.employeeId ?? ''} onChange={e => set('employeeId', e.target.value)} placeholder="e.g. STS0000001" />
+                    <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 4 }}>Leave blank to auto-generate.</div>
+                  </Field>
                   <Field label="Full Name *"><input style={inp} value={form.name ?? ''} onChange={e => set('name', e.target.value)} required placeholder="Md Hussain Azad" /></Field>
                   <Field label="Father's Name"><input style={inp} value={form.fatherName ?? ''} onChange={e => set('fatherName', e.target.value)} placeholder="Md Azad" /></Field>
                   <Field label="Email"><input type="email" style={inp} value={form.email ?? ''} onChange={e => set('email', e.target.value)} placeholder="employee@example.com" /></Field>

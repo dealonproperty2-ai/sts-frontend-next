@@ -39,12 +39,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       }
     }
 
+    // Employee number: admin can set/change it; ignore blanks so we never write an
+    // empty string (which would collide on the unique index).
+    if (body.employeeId !== undefined) {
+      const v = String(body.employeeId).trim();
+      if (v) updates.employeeId = v;
+    }
+
     const emp = await Employee.findByIdAndUpdate(params.id, { $set: updates }, { new: true }).lean();
     if (!emp) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     audit({ adminId: auth.payload.id, adminEmail: auth.payload.email ?? '', action: 'UPDATE', resource: 'employee', resourceId: params.id, ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() });
     return NextResponse.json({ data: emp });
   } catch (err) {
+    if ((err as { code?: number }).code === 11000) {
+      return NextResponse.json({ error: 'That employee number is already in use' }, { status: 409 });
+    }
     console.error('[employees PATCH]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
