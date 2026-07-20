@@ -121,8 +121,11 @@ function ExperienceEntry({ e }: { e: ResumeExperience }) {
   if (!hasContent(e.role, e.company, e.description, e.responsibilities, e.achievements)) return null;
 
   return (
-    <View style={s.entry} wrap={false}>
-      <View style={s.entryHeadRow}>
+    // The entry may split across pages (a long bullet list would otherwise jump
+    // wholesale to the next page and strand the section heading); the header row
+    // below stays together and pulls at least a couple of lines with it.
+    <View style={s.entry}>
+      <View style={s.entryHeadRow} wrap={false} minPresenceAhead={40}>
         <View style={{ flex: 1, paddingRight: 8 }}>
           {e.role ? <Text style={s.entryTitle}>{e.role}</Text> : null}
           {e.company ? <Text style={s.entrySub}>{e.company}</Text> : null}
@@ -176,8 +179,8 @@ function ProjectEntry({ p }: { p: ResumeProjectItem }) {
   if (!hasContent(p.name, p.description, p.responsibilities, p.highlights)) return null;
 
   return (
-    <View style={s.entry} wrap={false}>
-      <View style={s.entryHeadRow}>
+    <View style={s.entry}>
+      <View style={s.entryHeadRow} wrap={false} minPresenceAhead={40}>
         <View style={{ flex: 1, paddingRight: 8 }}>
           {p.name ? <Text style={s.entryTitle}>{p.name}</Text> : null}
           {p.role ? <Text style={s.entrySub}>{p.role}</Text> : null}

@@ -50,6 +50,7 @@ export function ResumeSection({
   rule = true,
   titleStyle,
   wrap = true,
+  minAhead = 70,
 }: {
   title?: string;
   children?: React.ReactNode;
@@ -59,13 +60,27 @@ export function ResumeSection({
   titleStyle?: PdfStyle;
   /** false keeps the whole block on one page so headings never orphan. */
   wrap?: boolean;
+  /**
+   * Vertical space (pt) that must remain below the heading for it to stay on
+   * this page. Entries render with wrap={false}, so a heading with too little
+   * room beneath it would be stranded while its first entry jumps to the next
+   * page. Roughly one entry's height.
+   */
+  minAhead?: number;
 }) {
   const kids = React.Children.toArray(children).filter(Boolean);
   if (!show || kids.length === 0) return null;
   return (
     <View style={s.section} wrap={wrap}>
-      {title ? <Text style={titleStyle ? [base.sectionTitle, titleStyle].flat() : base.sectionTitle}>{title}</Text> : null}
-      {title && rule ? <View style={base.rule} /> : null}
+      {title ? (
+        // minPresenceAhead reserves room below the heading: if the page can't fit
+        // the heading plus the start of its content, the whole block moves to the
+        // next page rather than stranding the heading at the bottom.
+        <View wrap={false} minPresenceAhead={minAhead}>
+          <Text style={titleStyle ? [base.sectionTitle, titleStyle].flat() : base.sectionTitle}>{title}</Text>
+          {rule ? <View style={base.rule} /> : null}
+        </View>
+      ) : null}
       {kids}
     </View>
   );
