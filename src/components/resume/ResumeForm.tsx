@@ -7,24 +7,49 @@ import type {
   ResumeEducation,
   ResumeCertification,
   ResumeTemplate,
+  ResumeMode,
 } from '@/lib/adminApi';
 
-type ProjForm = { name: string; description: string; link: string; technologies: string };
+type ProjForm = {
+  name: string; description: string; link: string; technologies: string;
+  role: string; duration: string; liveUrl: string; repoUrl: string;
+  responsibilities: string; highlights: string;
+};
 type SkillCatForm = { label: string; items: string };
+
+// Experience rows keep bullet lists as newline text while editing.
+type ExpForm = Omit<ResumeExperience, 'technologies' | 'responsibilities' | 'achievements'> & {
+  employmentType: string; technologies: string; responsibilities: string; achievements: string;
+};
 
 type FormState = {
   fullName: string; headline: string; email: string; phone: string; location: string;
   website: string; linkedin: string; github: string; summary: string;
   skillCategories: SkillCatForm[]; languages: string; template: ResumeTemplate;
-  experience: ResumeExperience[];
+  experience: ExpForm[];
   education: ResumeEducation[];
   projects: ProjForm[];
   certifications: ResumeCertification[];
+  // Premium-template fields
+  resumeMode: ResumeMode;
+  photoUrl: string;
+  yearsOfExperience: string;
+  availability: string;
+  englishLevel: string;
+  coreCompetencies: string;
+  achievements: string;
+  interests: string;
 };
 
-const BLANK_EXP: ResumeExperience = { company: '', role: '', location: '', startDate: '', endDate: '', current: false, description: '' };
+const BLANK_EXP: ExpForm = {
+  company: '', role: '', location: '', startDate: '', endDate: '', current: false, description: '',
+  employmentType: '', technologies: '', responsibilities: '', achievements: '',
+};
 const BLANK_EDU: ResumeEducation = { institution: '', degree: '', field: '', startDate: '', endDate: '', grade: '' };
-const BLANK_PROJ: ProjForm = { name: '', description: '', link: '', technologies: '' };
+const BLANK_PROJ: ProjForm = {
+  name: '', description: '', link: '', technologies: '',
+  role: '', duration: '', liveUrl: '', repoUrl: '', responsibilities: '', highlights: '',
+};
 const BLANK_CERT: ResumeCertification = { name: '', issuer: '', date: '' };
 const BLANK_SKILLCAT: SkillCatForm = { label: '', items: '' };
 
@@ -35,6 +60,8 @@ const SKILL_CATEGORY_SUGGESTIONS = [
 ];
 
 const TEMPLATES: { value: ResumeTemplate; label: string }[] = [
+  { value: 'corporate-sidebar', label: '★ Corporate Sidebar — premium, ATS text PDF' },
+  { value: 'executive-professional', label: '★ Executive Professional — premium, ATS text PDF' },
   { value: 'classic', label: 'Classic — traditional single column' },
   { value: 'modern', label: 'Modern — sidebar with accent' },
   { value: 'minimal', label: 'Minimal — clean & spacious' },
@@ -56,17 +83,44 @@ function resumeToForm(r?: AdminResume): FormState {
       : (r?.skills?.length ? [{ label: '', items: r.skills.join(', ') }] : [{ ...BLANK_SKILLCAT }]),
     languages: (r?.languages ?? []).join(', '),
     template: r?.template ?? 'classic',
-    experience: r?.experience?.length ? r.experience.map(e => ({ ...e })) : [{ ...BLANK_EXP }],
+    experience: r?.experience?.length
+      ? r.experience.map(e => ({
+          ...e,
+          employmentType: e.employmentType ?? '',
+          technologies: (e.technologies ?? []).join(', '),
+          responsibilities: (e.responsibilities ?? []).join('\n'),
+          achievements: (e.achievements ?? []).join('\n'),
+        }))
+      : [{ ...BLANK_EXP }],
     education: r?.education?.length ? r.education.map(e => ({ ...e })) : [{ ...BLANK_EDU }],
     projects: r?.projects?.length
-      ? r.projects.map(p => ({ name: p.name, description: p.description, link: p.link, technologies: p.technologies.join(', ') }))
+      ? r.projects.map(p => ({
+          name: p.name, description: p.description, link: p.link,
+          technologies: p.technologies.join(', '),
+          role: p.role ?? '', duration: p.duration ?? '',
+          liveUrl: p.liveUrl ?? '', repoUrl: p.repoUrl ?? '',
+          responsibilities: (p.responsibilities ?? []).join('\n'),
+          highlights: (p.highlights ?? []).join('\n'),
+        }))
       : [{ ...BLANK_PROJ }],
     certifications: r?.certifications?.length ? r.certifications.map(c => ({ ...c })) : [{ ...BLANK_CERT }],
+
+    resumeMode: r?.resumeMode ?? 'employee',
+    photoUrl: r?.photoUrl ?? '',
+    yearsOfExperience: r?.yearsOfExperience ? String(r.yearsOfExperience) : '',
+    availability: r?.availability ?? '',
+    englishLevel: r?.englishLevel ?? '',
+    coreCompetencies: (r?.coreCompetencies ?? []).join(', '),
+    achievements: (r?.achievements ?? []).join('\n'),
+    interests: (r?.interests ?? []).join(', '),
   };
 }
 
 function formToPayload(form: FormState): Partial<AdminResume> {
   const list = (s: string) => s.split(',').map(t => t.trim()).filter(Boolean);
+  // Bullet lists are newline-separated so the text itself may contain commas.
+  const lines = (s: string) =>
+    s.split(/\r?\n/).map(t => t.replace(/^[\s•\-*]+/, '').trim()).filter(Boolean);
   const skillCategories = form.skillCategories
     .map(c => ({ label: c.label.trim(), items: list(c.items) }))
     .filter(c => c.items.length > 0);
@@ -86,10 +140,34 @@ function formToPayload(form: FormState): Partial<AdminResume> {
     skillCategories,
     languages: list(form.languages),
     template: form.template,
-    experience: form.experience,
+    experience: form.experience.map(e => ({
+      company: e.company, role: e.role, location: e.location,
+      startDate: e.startDate, endDate: e.endDate, current: e.current,
+      description: e.description,
+      employmentType: e.employmentType,
+      technologies: list(e.technologies),
+      responsibilities: lines(e.responsibilities),
+      achievements: lines(e.achievements),
+    })),
     education: form.education,
-    projects: form.projects.map(p => ({ name: p.name, description: p.description, link: p.link, technologies: list(p.technologies) })),
+    projects: form.projects.map(p => ({
+      name: p.name, description: p.description, link: p.link,
+      technologies: list(p.technologies),
+      role: p.role, duration: p.duration,
+      liveUrl: p.liveUrl, repoUrl: p.repoUrl,
+      responsibilities: lines(p.responsibilities),
+      highlights: lines(p.highlights),
+    })),
     certifications: form.certifications,
+
+    resumeMode: form.resumeMode,
+    photoUrl: form.photoUrl.trim(),
+    yearsOfExperience: form.yearsOfExperience === '' ? 0 : Number(form.yearsOfExperience) || 0,
+    availability: form.availability.trim(),
+    englishLevel: form.englishLevel.trim(),
+    coreCompetencies: list(form.coreCompetencies),
+    achievements: lines(form.achievements),
+    interests: list(form.interests),
   };
 }
 
@@ -130,10 +208,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    if (!form.fullName.trim()) {
-      setError('Full name is required.');
-      return;
-    }
+    // No field is mandatory — empty sections simply auto-hide in the output.
     setSaving(true);
     try {
       await onSubmit(formToPayload(form));
@@ -148,7 +223,7 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
       {/* Basics */}
       <Card title="Basic Information">
         <div className="rf-grid-2" style={grid2}>
-          <Field label="Full Name" required><input required value={form.fullName} onChange={txt('fullName')} style={input} /></Field>
+          <Field label="Full Name"><input value={form.fullName} onChange={txt('fullName')} style={input} /></Field>
           <Field label="Headline / Target Role"><input value={form.headline} onChange={txt('headline')} placeholder="e.g. Full-Stack Developer" style={input} /></Field>
           <Field label="Email"><input type="email" value={form.email} onChange={txt('email')} style={input} /></Field>
           <Field label="Phone"><input value={form.phone} onChange={txt('phone')} style={input} /></Field>
@@ -159,12 +234,47 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
         </div>
       </Card>
 
-      {/* Template */}
-      <Card title="Template">
-        <Field label="Resume template">
-          <select value={form.template} onChange={txt('template')} style={input}>
-            {TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+      {/* Template & mode */}
+      <Card title="Template & Mode">
+        <div className="rf-grid-2" style={grid2}>
+          <Field label="Resume template">
+            <select value={form.template} onChange={txt('template')} style={input}>
+              {TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Resume mode">
+            <select value={form.resumeMode} onChange={txt('resumeMode')} style={input}>
+              <option value="employee">Employee Resume — full contact details</option>
+              <option value="client">Client Resource — contact details hidden</option>
+            </select>
+          </Field>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 8, lineHeight: 1.5 }}>
+          Client Resource mode removes email, phone, address, links, photo, interests and
+          references from the generated PDF entirely — they are never written to the file.
+          Applies to the two premium templates.
+        </div>
+      </Card>
+
+      {/* Resource profile */}
+      <Card title="Resource Profile">
+        <div className="rf-grid-2" style={grid2}>
+          <Field label="Years of experience">
+            <input type="number" min="0" max="60" step="0.5" value={form.yearsOfExperience} onChange={txt('yearsOfExperience')} placeholder="5" style={input} />
+          </Field>
+          <Field label="English level">
+            <input value={form.englishLevel} onChange={txt('englishLevel')} placeholder="Professional / Fluent / B2" style={input} />
+          </Field>
+          <Field label="Availability">
+            <input value={form.availability} onChange={txt('availability')} placeholder="Immediate / 2 weeks" style={input} />
+          </Field>
+          <Field label="Profile photo URL (employee mode only)">
+            <input value={form.photoUrl} onChange={txt('photoUrl')} placeholder="https://…" style={input} />
+          </Field>
+        </div>
+        <div style={{ height: 12 }} />
+        <Field label="Core competencies (comma-separated)">
+          <input value={form.coreCompetencies} onChange={txt('coreCompetencies')} placeholder="System Design, Code Review, Mentoring" style={input} />
         </Field>
       </Card>
 
@@ -191,9 +301,17 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
         ))}
       </Card>
 
-      {/* Languages */}
-      <Card title="Languages">
+      {/* Languages, achievements & interests */}
+      <Card title="Languages, Achievements & Interests">
         <Field label="Languages (comma-separated)"><input value={form.languages} onChange={txt('languages')} placeholder="English, Hindi, Bengali" style={input} /></Field>
+        <div style={{ height: 12 }} />
+        <Field label="Key achievements (one per line)">
+          <textarea value={form.achievements} onChange={txt('achievements')} rows={3} placeholder={'Led migration of 12 services…\nSpeaker at…'} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} />
+        </Field>
+        <div style={{ height: 12 }} />
+        <Field label="Interests (comma-separated — employee mode only)">
+          <input value={form.interests} onChange={txt('interests')} placeholder="Open source, Chess" style={input} />
+        </Field>
       </Card>
 
       {/* Experience */}
@@ -208,8 +326,18 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
               <Field label="End"><input value={e.endDate} disabled={e.current} onChange={ev => updateRow<ResumeExperience>('experience', i, { endDate: ev.target.value })} placeholder="Dec 2024" style={{ ...input, opacity: e.current ? 0.5 : 1 }} /></Field>
               <label style={checkRow}><input type="checkbox" checked={e.current} onChange={ev => updateRow<ResumeExperience>('experience', i, { current: ev.target.checked })} /> Currently working here</label>
             </div>
+            <div className="rf-grid-2" style={{ ...grid2, marginTop: 10 }}>
+              <Field label="Employment type"><input value={e.employmentType} onChange={ev => updateRow<ExpForm>('experience', i, { employmentType: ev.target.value })} placeholder="Full-time / Contract" style={input} /></Field>
+              <Field label="Technology stack (comma-separated)"><input value={e.technologies} onChange={ev => updateRow<ExpForm>('experience', i, { technologies: ev.target.value })} placeholder="React, Node.js, AWS" style={input} /></Field>
+            </div>
             <div style={{ marginTop: 10 }}>
-              <Field label="Description"><textarea value={e.description} onChange={ev => updateRow<ResumeExperience>('experience', i, { description: ev.target.value })} rows={3} placeholder="Key responsibilities and achievements…" style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+              <Field label="Description"><textarea value={e.description} onChange={ev => updateRow<ExpForm>('experience', i, { description: ev.target.value })} rows={2} placeholder="Short context about the role…" style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Field label="Responsibilities (one per line)"><textarea value={e.responsibilities} onChange={ev => updateRow<ExpForm>('experience', i, { responsibilities: ev.target.value })} rows={3} placeholder={'Built and maintained…\nCollaborated with…'} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Field label="Achievements (one per line)"><textarea value={e.achievements} onChange={ev => updateRow<ExpForm>('experience', i, { achievements: ev.target.value })} rows={2} placeholder={'Cut API latency by 40%…'} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
             </div>
           </Row>
         ))}
@@ -237,13 +365,20 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
           <Row key={i} onRemove={form.projects.length > 1 ? () => removeRow('projects', i) : undefined}>
             <div className="rf-grid-2" style={grid2}>
               <Field label="Project name"><input value={p.name} onChange={ev => updateRow<ProjForm>('projects', i, { name: ev.target.value })} style={input} /></Field>
-              <Field label="Link"><input value={p.link} onChange={ev => updateRow<ProjForm>('projects', i, { link: ev.target.value })} placeholder="https://…" style={input} /></Field>
-            </div>
-            <div style={{ marginTop: 10 }}>
+              <Field label="Your role"><input value={p.role} onChange={ev => updateRow<ProjForm>('projects', i, { role: ev.target.value })} placeholder="Lead Developer" style={input} /></Field>
+              <Field label="Duration"><input value={p.duration} onChange={ev => updateRow<ProjForm>('projects', i, { duration: ev.target.value })} placeholder="Jan 2024 – Jun 2024" style={input} /></Field>
               <Field label="Technologies (comma-separated)"><input value={p.technologies} onChange={ev => updateRow<ProjForm>('projects', i, { technologies: ev.target.value })} placeholder="React, Node.js" style={input} /></Field>
+              <Field label="Live URL"><input value={p.liveUrl} onChange={ev => updateRow<ProjForm>('projects', i, { liveUrl: ev.target.value })} placeholder="https://…" style={input} /></Field>
+              <Field label="Repository URL"><input value={p.repoUrl} onChange={ev => updateRow<ProjForm>('projects', i, { repoUrl: ev.target.value })} placeholder="https://github.com/…" style={input} /></Field>
             </div>
             <div style={{ marginTop: 10 }}>
               <Field label="Description"><textarea value={p.description} onChange={ev => updateRow<ProjForm>('projects', i, { description: ev.target.value })} rows={2} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Field label="Responsibilities (one per line)"><textarea value={p.responsibilities} onChange={ev => updateRow<ProjForm>('projects', i, { responsibilities: ev.target.value })} rows={2} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Field label="Highlights (one per line)"><textarea value={p.highlights} onChange={ev => updateRow<ProjForm>('projects', i, { highlights: ev.target.value })} rows={2} style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} /></Field>
             </div>
           </Row>
         ))}
