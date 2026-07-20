@@ -164,6 +164,10 @@ export interface AdminResume {
   yearsOfExperience?: number;
   availability?: string;
   englishLevel?: string;
+  noticePeriod?: string;
+  currentLocation?: string;
+  preferredTimeZone?: string;
+  primaryTechStack?: string[];
   coreCompetencies?: string[];
   achievements?: string[];
   interests?: string[];

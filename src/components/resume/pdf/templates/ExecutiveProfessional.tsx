@@ -60,16 +60,17 @@ function Fact({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export default function ExecutiveProfessional({ view, logoUrl }: TemplateProps) {
+export default function ExecutiveProfessional({ view, branding }: TemplateProps) {
   const isClient = view.mode === 'client';
+  const logoUrl = branding.logoUrl;
   const c = view.contact;
   const contactLine = [c.email, c.phone, c.location].map((v) => (v ?? '').trim()).filter(Boolean).join('   |   ');
   const linkLine = [c.website, c.linkedin, c.github].map((v) => (v ?? '').trim()).filter(Boolean).join('   |   ');
 
   const facts = [
     view.yearsOfExperience ? `${view.yearsOfExperience}+ Years` : '',
-    view.englishLevel,
-    view.availability,
+    view.englishLevel, view.availability,
+    view.noticePeriod, view.currentLocation, view.preferredTimeZone,
   ].some(Boolean);
 
   return (
@@ -102,6 +103,9 @@ export default function ExecutiveProfessional({ view, logoUrl }: TemplateProps) 
             <Fact label="Experience" value={view.yearsOfExperience ? `${view.yearsOfExperience}+ Years` : ''} />
             <Fact label="English" value={view.englishLevel} />
             <Fact label="Availability" value={view.availability} />
+            <Fact label="Notice" value={view.noticePeriod} />
+            <Fact label="Location" value={view.currentLocation} />
+            <Fact label="Time Zone" value={view.preferredTimeZone} />
           </View>
         ) : null}
 
@@ -110,6 +114,11 @@ export default function ExecutiveProfessional({ view, logoUrl }: TemplateProps) 
 
       {/* ── Body ──────────────────────────────────────────────────── */}
       <ResumeSummary summary={view.summary} />
+
+      <ResumeSection title="Primary Tech Stack" show={view.primaryTechStack.length > 0}>
+        <Chips items={view.primaryTechStack} />
+      </ResumeSection>
+
       <ResumeSkills groups={view.skillGroups} />
 
       <ResumeSection title="Core Competencies" show={view.coreCompetencies.length > 0}>
@@ -132,7 +141,7 @@ export default function ExecutiveProfessional({ view, logoUrl }: TemplateProps) 
         ))}
       </ResumeSection>
 
-      <ResumeFooter show={isClient} />
+      <ResumeFooter show={isClient} branding={branding} />
     </Page>
   );
 }

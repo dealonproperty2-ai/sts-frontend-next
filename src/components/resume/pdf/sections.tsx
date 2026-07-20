@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, Link } from '@react-pdf/renderer';
 import { base, color, space, type } from './theme';
 import { ResumeSection, Bullet, BulletList, Chips, hasContent } from './primitives';
 import type { ResumeView } from '@/lib/resumeView';
+import type { CompanyBranding } from '@/lib/branding';
 import type {
   ResumeExperience,
   ResumeProjectItem,
@@ -300,22 +301,26 @@ export function ResumeInlineSection({
 
 /* ── Footer (client resource profiles) ────────────────────────────────────── */
 
-export function ResumeFooter({ show }: { show: boolean }) {
+export function ResumeFooter({
+  show, branding, left = space.page,
+}: { show: boolean; branding: CompanyBranding; left?: number }) {
   if (!show) return null;
+  const meta = [branding.website, branding.tagline].map((v) => (v ?? '').trim()).filter(Boolean).join('  ·  ');
   return (
     <View
       fixed
       style={{
-        position: 'absolute', bottom: 18, left: space.page, right: space.page,
+        position: 'absolute', bottom: 18, left, right: space.page,
         borderTopWidth: 0.75, borderTopColor: color.border, paddingTop: 6,
       }}
     >
       <Text style={{ fontSize: type.tiny, color: color.primary, fontFamily: 'Helvetica-Bold', letterSpacing: 0.4 }}>
-        Prepared by STEP TO SOFT PVT. LTD.
+        {`Prepared by ${branding.name}`}
       </Text>
-      <Text style={{ fontSize: type.tiny, color: color.muted, marginTop: 1 }}>
-        This document represents an available technical resource.
-      </Text>
+      {branding.footerNote ? (
+        <Text style={{ fontSize: type.tiny, color: color.muted, marginTop: 1 }}>{branding.footerNote}</Text>
+      ) : null}
+      {meta ? <Text style={{ fontSize: type.tiny, color: color.muted, marginTop: 1 }}>{meta}</Text> : null}
     </View>
   );
 }

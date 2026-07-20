@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi, AdminResume, ResumeTemplate, ResumeMode } from '@/lib/adminApi';
 import ResumeDocument from '@/components/resume/ResumeDocument';
-import ResumePdfPreview, { downloadResumePdf, useLogoUrl } from '@/components/resume/pdf/ResumePdfPreview';
-import { isPdfTemplate, PDF_TEMPLATES } from '@/components/resume/pdf/registry';
+import ResumePdfPreview from '@/components/resume/pdf/ResumePdfPreview';
+import { RESUME_TEMPLATES, getTemplateMeta, isPdfTemplate } from '@/components/resume/templateMeta';
+import { buildResumeView } from '@/lib/resumeView';
+import { resolveBranding } from '@/lib/branding';
+import { exportersFor, runExport } from '@/lib/resumeExport/exporters';
 
 const PRINT_CSS = `
 @media print {
@@ -18,14 +21,11 @@ const PRINT_CSS = `
 @media screen { #resume-print-area { display: none; } }
 `;
 
-const TEMPLATES: { value: ResumeTemplate; label: string }[] = [
-  // Legacy HTML templates (html2canvas export) — unchanged behaviour.
-  { value: 'classic', label: 'Classic' },
-  { value: 'modern', label: 'Modern' },
-  { value: 'minimal', label: 'Minimal' },
-  // Premium react-pdf templates (true text PDF).
-  ...PDF_TEMPLATES.map(t => ({ value: t.id as ResumeTemplate, label: `${t.label} ★` })),
-];
+// Options come straight from the registry — no hardcoded template list.
+const TEMPLATES = RESUME_TEMPLATES.map(t => ({
+  value: t.id,
+  label: t.atsOptimised ? `${t.name} ★` : t.name,
+}));
 
 export default function ResumeViewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
   const [resume, setResume] = useState<AdminResume | null>(null);
   const [template, setTemplate] = useState<ResumeTemplate>('classic');
   const [mode, setMode] = useState<ResumeMode>('employee');
-  const logoUrl = useLogoUrl();
+  const [exportMsg, setExportMsg] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -84,17 +84,37 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
     window.print();
   }
 
-  async function handleDownload() {
+  /** Registry-driven export: the exporter decides the output format. */
+  async function handleExport(format: string) {
     if (!resume) return;
     setDownloading(true);
+    setExportMsg('');
     try {
-      // Premium templates export a real text-based PDF via react-pdf.
-      if (isPdfTemplate(template)) {
-        await downloadResumePdf(resume, { mode, template, logoUrl });
+      // Legacy HTML templates have no react-pdf document; keep their existing
+      // html2canvas image export for anything the export layer can't serve.
+      if (format === 'pdf' && !isPdfTemplate(template)) {
+        await legacyImagePdf();
         return;
       }
+      const res = await runExport(format, {
+        resume,
+        view: buildResumeView(resume, mode),
+        mode,
+        template,
+        branding: resolveBranding(),
+      });
+      setExportMsg(res.message);
+    } catch (err) {
+      setExportMsg(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
-      // ── Legacy html2canvas path (classic / modern / minimal) — unchanged ──
+  // ── Legacy html2canvas path (classic / modern / minimal) — unchanged ──
+  async function legacyImagePdf() {
+    if (!resume) return;
+    try {
       const el = document.getElementById('resume-doc');
       if (!el) return;
       const html2canvas = (await import('html2canvas')).default;
@@ -122,10 +142,10 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
       }
       const safeName = resume.fullName.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'resume';
       pdf.save(`Resume-${safeName}-${template}.pdf`);
+      setExportMsg('PDF downloaded (image-based — not ATS parseable).');
     } catch (err) {
       console.error('[resume PDF]', err);
-    } finally {
-      setDownloading(false);
+      setExportMsg('Export failed');
     }
   }
 
@@ -176,12 +196,29 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
               {!isPdfTemplate(template) && (
                 <button onClick={handlePrint} style={btnSecondary}>Print</button>
               )}
-              <button onClick={handleDownload} disabled={downloading} style={btnPrimary}>{downloading ? 'Generating…' : 'Download PDF'}</button>
+              {/* Export actions come from the export registry. */}
+              {exportersFor(template).map(x => (
+                <button
+                  key={x.id}
+                  onClick={() => handleExport(x.id)}
+                  disabled={downloading || !x.available}
+                  title={x.available ? `Export as ${x.label}` : x.unavailableReason}
+                  style={x.id === 'pdf' ? btnPrimary : btnSecondary}
+                >
+                  {downloading && x.id === 'pdf' ? 'Generating…' : x.label}
+                </button>
+              ))}
               <Link href={`/admin/resumes/${id}/edit`} style={{ ...btnSecondary, textDecoration: 'none' }}>Edit</Link>
               <button onClick={() => { setDeleteOpen(true); setDeleteError(''); }} style={btnDangerFull}>Delete</button>
             </>
           )}
         </div>
+
+        {exportMsg && (
+          <div style={{ padding: '8px 24px', fontSize: 13, color: 'var(--fg-2)', background: 'var(--bg-1)', borderBottom: '1px solid var(--line)' }}>
+            {exportMsg}
+          </div>
+        )}
 
         {/* Preview — premium templates render the actual PDF, so preview === export */}
         <div

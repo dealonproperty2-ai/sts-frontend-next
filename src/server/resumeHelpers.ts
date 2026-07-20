@@ -169,6 +169,7 @@ export function buildResume(
     ['summary', 3000],
     // Premium-template additions
     ['photoUrl', 500], ['availability', 120], ['englishLevel', 60],
+    ['noticePeriod', 120], ['currentLocation', 200], ['preferredTimeZone', 120],
   ];
   for (const [key, max] of strFields) {
     if (has(key)) out[key] = clean(body[key], max);
@@ -183,6 +184,7 @@ export function buildResume(
   if (has('certifications')) out.certifications = sanitizeCertifications(body.certifications);
 
   if (has('coreCompetencies')) out.coreCompetencies = parseList(body.coreCompetencies, 30, 80);
+  if (has('primaryTechStack')) out.primaryTechStack = parseList(body.primaryTechStack, 30, 60);
   if (has('achievements')) out.achievements = parseLines(body.achievements, 30, 400);
   if (has('interests')) out.interests = parseList(body.interests, 30, 60);
   if (has('references')) out.references = sanitizeReferences(body.references);

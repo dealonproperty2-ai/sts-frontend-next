@@ -48,8 +48,13 @@ const s = StyleSheet.create({
   },
 });
 
-export default function CorporateSidebar({ view, logoUrl }: TemplateProps) {
+export default function CorporateSidebar({ view, branding }: TemplateProps) {
   const isClient = view.mode === 'client';
+  const logoUrl = branding.logoUrl;
+  const hasProfileFacts = hasContent(
+    view.yearsOfExperience, view.englishLevel, view.availability,
+    view.noticePeriod, view.currentLocation, view.preferredTimeZone
+  );
   const c = view.contact;
   const contacts = [c.email, c.phone, c.location, c.website, c.linkedin, c.github]
     .map((v) => (v ?? '').trim())
@@ -72,10 +77,17 @@ export default function CorporateSidebar({ view, logoUrl }: TemplateProps) {
           <Image src={view.photoUrl} style={{ width: 74, height: 74, borderRadius: 37, marginBottom: 10 }} />
         ) : null}
 
-        <ResumeSection wrap={false} title="Profile" show={hasContent(view.yearsOfExperience, view.englishLevel, view.availability)} rule titleStyle={s.railTitle}>
+        <ResumeSection wrap={false} title="Profile" show={hasProfileFacts} rule titleStyle={s.railTitle}>
           <MetaRow label="Experience" value={view.yearsOfExperience ? `${view.yearsOfExperience}+ Years` : ''} />
           <MetaRow label="English" value={view.englishLevel} />
           <MetaRow label="Availability" value={view.availability} />
+          <MetaRow label="Notice Period" value={view.noticePeriod} />
+          <MetaRow label="Location" value={view.currentLocation} />
+          <MetaRow label="Time Zone" value={view.preferredTimeZone} />
+        </ResumeSection>
+
+        <ResumeSection wrap={false} title="Primary Stack" show={view.primaryTechStack.length > 0} rule titleStyle={s.railTitle}>
+          <Chips items={view.primaryTechStack} />
         </ResumeSection>
 
         {/* Contact is structurally absent in client mode. */}
@@ -135,7 +147,8 @@ export default function CorporateSidebar({ view, logoUrl }: TemplateProps) {
         <ResumeBulletSection title="Key Achievements" items={view.achievements} />
       </View>
 
-      <ResumeFooter show={isClient} />
+      {/* Footer starts after the rail so it never sits on the tinted band. */}
+      <ResumeFooter show={isClient} branding={branding} left={RAIL + 22} />
     </Page>
   );
 }

@@ -34,6 +34,11 @@ export interface ResumeView {
   yearsOfExperience: number;
   availability: string;
   englishLevel: string;
+  noticePeriod: string;
+  /** Work location for a resource profile — distinct from personal address. */
+  currentLocation: string;
+  preferredTimeZone: string;
+  primaryTechStack: string[];
 
   skillGroups: ResumeSkillCategory[];
   coreCompetencies: string[];
@@ -150,6 +155,12 @@ export function buildResumeView(resume: AdminResume, modeOverride?: ResumeMode):
     yearsOfExperience: resume.yearsOfExperience ?? 0,
     availability: nonEmpty(resume.availability),
     englishLevel: nonEmpty(resume.englishLevel),
+    noticePeriod: nonEmpty(resume.noticePeriod),
+    // A city/region for staffing purposes is fine to share; the personal street
+    // address (contact.location) is still withheld in client mode.
+    currentLocation: nonEmpty(resume.currentLocation),
+    preferredTimeZone: nonEmpty(resume.preferredTimeZone),
+    primaryTechStack: resume.primaryTechStack ?? [],
 
     skillGroups,
     coreCompetencies: resume.coreCompetencies ?? [],

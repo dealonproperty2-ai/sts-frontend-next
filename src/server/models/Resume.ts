@@ -107,6 +107,11 @@ const ResumeSchema = new Schema(
     yearsOfExperience:{ type: Number, default: 0, min: 0, max: 60 },
     availability:     { type: String, default: '' },
     englishLevel:     { type: String, default: '' },
+    // Resource-profile extras — surfaced on client profiles, ignored otherwise.
+    noticePeriod:     { type: String, default: '' },
+    currentLocation:  { type: String, default: '' },
+    preferredTimeZone:{ type: String, default: '' },
+    primaryTechStack: { type: [String], default: [] },
     coreCompetencies: { type: [String], default: [] },
     achievements:     { type: [String], default: [] },
     interests:        { type: [String], default: [] },

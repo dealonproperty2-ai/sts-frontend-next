@@ -1,49 +1,34 @@
 import type { ComponentType } from 'react';
 import type { ResumeView } from '@/lib/resumeView';
+import type { CompanyBranding } from '@/lib/branding';
 import type { ResumeTemplate } from '@/lib/adminApi';
+import CorporateSidebar from './templates/CorporateSidebar';
+import ExecutiveProfessional from './templates/ExecutiveProfessional';
+import { RESUME_TEMPLATES, getTemplateMeta, isPdfTemplate, DEFAULT_TEMPLATE } from '../templateMeta';
 
-/** Every premium template receives exactly this contract. */
+/** Every pdf template receives exactly this contract — data plus branding. */
 export interface TemplateProps {
   view: ResumeView;
-  /** Absolute URL to the company logo (client resource profiles only). */
-  logoUrl?: string;
-}
-
-export type PdfTemplateId = Extract<
-  ResumeTemplate,
-  'corporate-sidebar' | 'executive-professional'
->;
-
-export interface PdfTemplateMeta {
-  id: PdfTemplateId;
-  label: string;
-  description: string;
+  branding: CompanyBranding;
 }
 
 /**
- * Registry of react-pdf templates.
+ * Binds template ids to their pdf components.
  *
- * To add a future template: create the component under ./templates, then add one
- * entry here and one lazy import in ResumePdfDocument. Nothing else changes.
+ * Adding a template: create the component, add its entry to templateMeta.ts,
+ * then register the component here. Nothing else in the app changes.
  */
-export const PDF_TEMPLATES: PdfTemplateMeta[] = [
-  {
-    id: 'corporate-sidebar',
-    label: 'Corporate Sidebar',
-    description: 'Two-column enterprise profile — facts rail + narrative column.',
-  },
-  {
-    id: 'executive-professional',
-    label: 'Executive Professional',
-    description: 'Single-column executive layout — maximum ATS clarity.',
-  },
-];
+export const PDF_COMPONENTS: Partial<Record<ResumeTemplate, ComponentType<TemplateProps>>> = {
+  'corporate-sidebar': CorporateSidebar,
+  'executive-professional': ExecutiveProfessional,
+};
 
-const PDF_TEMPLATE_IDS = new Set<string>(PDF_TEMPLATES.map((t) => t.id));
-
-/** True when a template renders through react-pdf rather than the legacy HTML path. */
-export function isPdfTemplate(template?: string): template is PdfTemplateId {
-  return !!template && PDF_TEMPLATE_IDS.has(template);
+/** Resolves the component for a template id, falling back to the default. */
+export function resolvePdfComponent(id?: string): ComponentType<TemplateProps> {
+  const direct = id ? PDF_COMPONENTS[id as ResumeTemplate] : undefined;
+  return direct ?? (PDF_COMPONENTS[DEFAULT_TEMPLATE] as ComponentType<TemplateProps>);
 }
 
-export type { ComponentType };
+// Re-exported so callers have a single import site for template concerns.
+export { RESUME_TEMPLATES, getTemplateMeta, isPdfTemplate, DEFAULT_TEMPLATE };
+export type { ResumeTemplateMeta, TemplateTag } from '../templateMeta';
