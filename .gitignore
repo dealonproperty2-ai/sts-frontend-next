@@ -11,3 +11,6 @@ _legacy_angular
 
 # Local pre-merge review artifacts (screenshots + PDFs)
 resume-review/
+
+# Isolated analysis build output (NEXT_DIST_DIR)
+.next-analyze/

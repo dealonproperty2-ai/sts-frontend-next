@@ -46,39 +46,6 @@ function dateRange(start?: string, end?: string, current?: boolean) {
   return join([start, e], ' – ');
 }
 
-/* ── Header ───────────────────────────────────────────────────────────────── */
-
-export function ResumeHeader({ view, compact }: { view: ResumeView; compact?: boolean }) {
-  const c = view.contact;
-  const contactLine = join([c.email, c.phone, c.location], '  |  ');
-  const linkLine = join([c.website, c.linkedin, c.github], '  |  ');
-  if (!hasContent(view.fullName, view.headline, contactLine, linkLine, view.photoUrl)) return null;
-
-  return (
-    <View style={{ marginBottom: compact ? space.block : space.section }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {view.photoUrl ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image src={view.photoUrl} style={{ width: 54, height: 54, borderRadius: 27, marginRight: 12 }} />
-        ) : null}
-        <View style={{ flex: 1 }}>
-          {view.fullName ? (
-            <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: type.name, color: color.primary, letterSpacing: 0.3 }}>
-              {view.fullName}
-            </Text>
-          ) : null}
-          {view.headline ? (
-            <Text style={{ fontSize: type.role, color: color.text, marginTop: 2 }}>{view.headline}</Text>
-          ) : null}
-        </View>
-      </View>
-
-      {contactLine ? <Text style={[base.muted, { marginTop: 6 }]}>{contactLine}</Text> : null}
-      {linkLine ? <Text style={[base.muted, { marginTop: 1 }]}>{linkLine}</Text> : null}
-    </View>
-  );
-}
-
 /* ── Summary ──────────────────────────────────────────────────────────────── */
 
 export function ResumeSummary({ summary, title = 'Professional Summary' }: { summary: string; title?: string }) {

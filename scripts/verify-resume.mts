@@ -106,6 +106,16 @@ for (const meta of RESUME_TEMPLATES.filter(t => t.engine === 'pdf')) {
   check(`[${t}] client: resource fields render`, ['30 days', 'IST', 'Asansol'].every(v => cli.text.includes(v)), 'notice/timezone/location');
   check(`[${t}] client: skills retained`, /React|Node/.test(cli.text));
 
+  // ATS parsers segment resumes by heading text. Excessive letter-spacing makes
+  // extractors emit "WO R K E X P E R I E N C E", which no parser will match.
+  const headings = ['PROFESSIONAL SUMMARY', 'WORK EXPERIENCE'];
+  const upper = emp.text.toUpperCase();
+  check(
+    `[${t}] headings extract as clean text (ATS segmentation)`,
+    headings.every(h => upper.includes(h)),
+    headings.filter(h => !upper.includes(h)).join(', ') || 'all intact'
+  );
+
   const empty = { _id: 'e', createdAt: '', updatedAt: '', fullName: '', skills: [], experience: [], education: [], projects: [], certifications: [], languages: [], template: t } as unknown as AdminResume;
   const emptyText = (await ats(await renderToBuffer(React.createElement(Doc, { resume: empty, template: t })))).text;
   check(`[${t}] empty: no stray headings`, !/EXPERIENCE|EDUCATION|PROJECTS|CERTIFICATIONS|SKILLS|COMPETENC/i.test(emptyText));

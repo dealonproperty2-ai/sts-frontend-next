@@ -86,9 +86,6 @@ export function ResumeSection({
   );
 }
 
-export function ResumeDivider({ style }: { style?: PdfStyle }) {
-  return <View style={style ? [s.divider, style].flat() : s.divider} />;
-}
 
 /** Bulleted line. Renders nothing for blank text so lists self-trim. */
 export function Bullet({ children, color: mark }: { children?: string; color?: string }) {

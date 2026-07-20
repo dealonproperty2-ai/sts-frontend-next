@@ -40,7 +40,7 @@ const s = StyleSheet.create({
   logo: { width: 104 },
   resourceTag: {
     fontSize: type.tiny, color: color.accent, fontFamily: 'Helvetica-Bold',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3,
+    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3,
   },
   factRow: {
     flexDirection: 'row', gap: 22, marginTop: 8,

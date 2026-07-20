@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi, AdminResume, ResumeTemplate, ResumeMode } from '@/lib/adminApi';
 import ResumeDocument from '@/components/resume/ResumeDocument';
-import ResumePdfPreview from '@/components/resume/pdf/ResumePdfPreview';
+import dynamic from 'next/dynamic';
 import { RESUME_TEMPLATES, getTemplateMeta, isPdfTemplate } from '@/components/resume/templateMeta';
 import { buildResumeView } from '@/lib/resumeView';
 import { resolveBranding } from '@/lib/branding';
@@ -20,6 +20,17 @@ const PRINT_CSS = `
 }
 @media screen { #resume-print-area { display: none; } }
 `;
+
+// The react-pdf preview is ~500kB; load it only when a premium template is
+// actually selected, so viewing a legacy template stays lightweight.
+const ResumePdfPreview = dynamic(() => import('@/components/resume/pdf/ResumePdfPreview'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--fg-4)', fontSize: 13 }}>
+      Loading preview…
+    </div>
+  ),
+});
 
 // Options come straight from the registry — no hardcoded template list.
 const TEMPLATES = RESUME_TEMPLATES.map(t => ({

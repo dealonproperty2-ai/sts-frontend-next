@@ -1,4 +1,3 @@
-import ResumePdfDocument from '@/components/resume/pdf/ResumePdfDocument';
 import { getTemplateMeta } from '@/components/resume/templateMeta';
 import { type ResumeExporter, type ExportContext, exportBaseName } from './types';
 
@@ -12,8 +11,12 @@ const pdfExporter: ResumeExporter = {
   available: true,
   supportsEngines: ['pdf'],
   async run(ctx: ExportContext) {
-    // Imported lazily so the react-pdf runtime only loads when actually exporting.
-    const { pdf } = await import('@react-pdf/renderer');
+    // Both the renderer and the document are imported lazily, so the ~500kB
+    // react-pdf subtree stays out of the route bundle until an export is run.
+    const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('@/components/resume/pdf/ResumePdfDocument'),
+    ]);
     const blob = await pdf(
       <ResumePdfDocument
         resume={ctx.resume}

@@ -49,7 +49,9 @@ export const base = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: type.section,
     color: color.primary,
-    letterSpacing: 1.1,
+    // Kept at 0.8: above ~1.0 PDF text extractors insert a space between every
+    // glyph ("WO R K E X P E R I E N C E"), which breaks ATS heading detection.
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 5,
   },

@@ -35,7 +35,7 @@ const s = StyleSheet.create({
   main: { flex: 1, paddingHorizontal: 22, paddingTop: 26 },
   railTitle: {
     fontFamily: 'Helvetica-Bold', fontSize: type.section - 0.5, color: color.primary,
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4,
+    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4,
   },
   railRule: { borderBottomWidth: 0.75, borderBottomColor: color.border, marginBottom: 6 },
   name: { fontFamily: 'Helvetica-Bold', fontSize: type.name, color: color.primary, lineHeight: 1.15 },
@@ -45,7 +45,7 @@ const s = StyleSheet.create({
   logo: { width: 96, marginBottom: 10 },
   resourceTag: {
     fontSize: type.tiny, color: color.accent, fontFamily: 'Helvetica-Bold',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4,
+    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4,
   },
 });
 

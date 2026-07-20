@@ -37,12 +37,15 @@ export const RESUME_TEMPLATES: ResumeTemplateMeta[] = [
   {
     id: 'corporate-sidebar',
     name: 'Corporate Sidebar',
-    description: 'Two-column enterprise profile: a facts rail for skills and availability beside a narrative column.',
-    recommendedFor: ['Client', 'Corporate', 'ATS'],
+    description: 'Two-column enterprise profile: a facts rail for skills and availability beside a narrative column. Best for client resource profiles — for ATS job applications prefer Executive Professional.',
+    recommendedFor: ['Client', 'Corporate'],
     modeSupported: ['employee', 'client'],
     engine: 'pdf',
     thumbnail: '/resume-templates/corporate-sidebar.png',
-    atsOptimised: true,
+    // Text is fully extractable, but the two-column layout means a linear parser
+    // reads the sidebar before the candidate's name, which can weaken field
+    // detection. Single-column Executive Professional is the ATS-safe choice.
+    atsOptimised: false,
   },
   {
     id: 'executive-professional',
@@ -95,11 +98,6 @@ export function getTemplateMeta(id?: string): ResumeTemplateMeta | undefined {
 /** True when the template renders through react-pdf (real text PDF). */
 export function isPdfTemplate(id?: string): boolean {
   return getTemplateMeta(id)?.engine === 'pdf';
-}
-
-/** Templates that declare support for a given resume mode. */
-export function templatesForMode(mode: ResumeMode): ResumeTemplateMeta[] {
-  return RESUME_TEMPLATES.filter((t) => t.modeSupported.includes(mode));
 }
 
 export const DEFAULT_TEMPLATE: ResumeTemplate = 'executive-professional';

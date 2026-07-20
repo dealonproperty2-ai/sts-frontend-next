@@ -26,6 +26,9 @@ const nextConfig = {
   // @react-pdf/renderer ships ESM-only; without this the bundler throws
   // "ESM packages need to be imported" and the whole resume view fails.
   transpilePackages: ['@react-pdf/renderer'],
+  // Lets a build run into an isolated directory (NEXT_DIST_DIR=.next-analyze)
+  // so CI/bundle analysis never clobbers a running dev server's .next cache.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
 
   images: {
     formats: ['image/avif', 'image/webp'],
