@@ -11,6 +11,7 @@ import {
   ResumeCertificationsSection,
   ResumeBulletSection,
   ResumeInlineSection,
+  ResumeLogo,
   ResumeFooter,
 } from '../sections';
 import type { TemplateProps } from '../registry';
@@ -50,7 +51,6 @@ const s = StyleSheet.create({
 
 export default function CorporateSidebar({ view, branding }: TemplateProps) {
   const isClient = view.mode === 'client';
-  const logoUrl = branding.logoUrl;
   const hasProfileFacts = hasContent(
     view.yearsOfExperience, view.englishLevel, view.availability,
     view.noticePeriod, view.currentLocation, view.preferredTimeZone
@@ -67,9 +67,10 @@ export default function CorporateSidebar({ view, branding }: TemplateProps) {
 
       {/* ── Left rail ─────────────────────────────────────────────── */}
       <View style={s.rail}>
-        {isClient && logoUrl ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image src={logoUrl} style={s.logo} />
+        {isClient ? (
+          <View style={{ marginBottom: 12 }}>
+            <ResumeLogo branding={branding} width={86} />
+          </View>
         ) : null}
 
         {!isClient && view.photoUrl ? (

@@ -304,6 +304,35 @@ export function ResumeInlineSection({
 
 /* ── Footer (client resource profiles) ────────────────────────────────────── */
 
+/**
+ * Company logo for resource profiles. Light artwork (the common case for a logo
+ * built against a dark site header) would vanish on the white page, so it is
+ * placed on a dark panel unless the branding says the logo is already dark.
+ */
+export function ResumeLogo({
+  branding, width = 92,
+}: { branding: CompanyBranding; width?: number }) {
+  if (!branding.logoUrl) return null;
+  const img = (
+    // eslint-disable-next-line jsx-a11y/alt-text
+    <Image src={branding.logoUrl} style={{ width, objectFit: 'contain' }} />
+  );
+  if (!branding.logoOnDark) return img;
+  return (
+    <View
+      style={{
+        backgroundColor: color.primary,
+        borderRadius: 3,
+        paddingVertical: 7,
+        paddingHorizontal: 10,
+        alignSelf: 'flex-start',
+      }}
+    >
+      {img}
+    </View>
+  );
+}
+
 export function ResumeFooter({
   show, branding, left = space.page,
 }: { show: boolean; branding: CompanyBranding; left?: number }) {

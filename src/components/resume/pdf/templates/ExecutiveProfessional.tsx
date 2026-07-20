@@ -11,6 +11,7 @@ import {
   ResumeCertificationsSection,
   ResumeBulletSection,
   ResumeInlineSection,
+  ResumeLogo,
   ResumeFooter,
 } from '../sections';
 import type { TemplateProps } from '../registry';
@@ -62,7 +63,6 @@ function Fact({ label, value }: { label: string; value?: string }) {
 
 export default function ExecutiveProfessional({ view, branding }: TemplateProps) {
   const isClient = view.mode === 'client';
-  const logoUrl = branding.logoUrl;
   const c = view.contact;
   const contactLine = [c.email, c.phone, c.location].map((v) => (v ?? '').trim()).filter(Boolean).join('   |   ');
   const linkLine = [c.website, c.linkedin, c.github].map((v) => (v ?? '').trim()).filter(Boolean).join('   |   ');
@@ -89,10 +89,7 @@ export default function ExecutiveProfessional({ view, branding }: TemplateProps)
             {view.headline ? <Text style={s.role}>{view.headline}</Text> : null}
           </View>
 
-          {isClient && logoUrl ? (
-            // eslint-disable-next-line jsx-a11y/alt-text
-            <Image src={logoUrl} style={s.logo} />
-          ) : null}
+          {isClient ? <ResumeLogo branding={branding} width={96} /> : null}
         </View>
 
         {contactLine ? <Text style={s.contact}>{contactLine}</Text> : null}

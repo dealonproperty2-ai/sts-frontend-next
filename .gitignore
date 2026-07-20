@@ -8,3 +8,6 @@ out
 *.log
 .vercel
 _legacy_angular
+
+# Local pre-merge review artifacts (screenshots + PDFs)
+resume-review/

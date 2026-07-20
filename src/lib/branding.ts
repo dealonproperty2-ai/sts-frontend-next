@@ -11,6 +11,12 @@ export interface CompanyBranding {
   tagline: string;
   /** Line printed under the footer attribution on resource profiles. */
   footerNote: string;
+  /**
+   * True when the logo artwork is light (designed for dark backgrounds). The
+   * templates then render it on a dark panel so it stays legible on the white
+   * page. Set false for a dark/coloured logo to place it directly on the page.
+   */
+  logoOnDark: boolean;
 }
 
 /** Values come from NEXT_PUBLIC_* so they are available in the browser bundle. */
@@ -22,6 +28,8 @@ export const DEFAULT_BRANDING: CompanyBranding = {
   footerNote:
     process.env.NEXT_PUBLIC_COMPANY_FOOTER_NOTE ||
     'This document represents an available technical resource.',
+  // The bundled logo3.png is white artwork, so it needs a dark backing panel.
+  logoOnDark: process.env.NEXT_PUBLIC_COMPANY_LOGO_ON_DARK !== 'false',
 };
 
 /**
