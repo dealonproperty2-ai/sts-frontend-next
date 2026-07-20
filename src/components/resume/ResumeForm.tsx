@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import TemplatePicker from './TemplatePicker';
+import { DEFAULT_TEMPLATE } from './templateMeta';
 import type {
   AdminResume,
   ResumeExperience,
@@ -36,6 +38,10 @@ type FormState = {
   yearsOfExperience: string;
   availability: string;
   englishLevel: string;
+  noticePeriod: string;
+  currentLocation: string;
+  preferredTimeZone: string;
+  primaryTechStack: string;
   coreCompetencies: string;
   achievements: string;
   interests: string;
@@ -59,14 +65,6 @@ const SKILL_CATEGORY_SUGGESTIONS = [
   'Backend', 'Database', 'Tools & Platforms', 'Version Control', 'Operating Systems',
 ];
 
-const TEMPLATES: { value: ResumeTemplate; label: string }[] = [
-  { value: 'corporate-sidebar', label: '★ Corporate Sidebar — premium, ATS text PDF' },
-  { value: 'executive-professional', label: '★ Executive Professional — premium, ATS text PDF' },
-  { value: 'classic', label: 'Classic — traditional single column' },
-  { value: 'modern', label: 'Modern — sidebar with accent' },
-  { value: 'minimal', label: 'Minimal — clean & spacious' },
-];
-
 function resumeToForm(r?: AdminResume): FormState {
   return {
     fullName: r?.fullName ?? '',
@@ -82,7 +80,7 @@ function resumeToForm(r?: AdminResume): FormState {
       ? r.skillCategories.map(c => ({ label: c.label, items: c.items.join(', ') }))
       : (r?.skills?.length ? [{ label: '', items: r.skills.join(', ') }] : [{ ...BLANK_SKILLCAT }]),
     languages: (r?.languages ?? []).join(', '),
-    template: r?.template ?? 'classic',
+    template: r?.template ?? DEFAULT_TEMPLATE,
     experience: r?.experience?.length
       ? r.experience.map(e => ({
           ...e,
@@ -110,6 +108,10 @@ function resumeToForm(r?: AdminResume): FormState {
     yearsOfExperience: r?.yearsOfExperience ? String(r.yearsOfExperience) : '',
     availability: r?.availability ?? '',
     englishLevel: r?.englishLevel ?? '',
+    noticePeriod: r?.noticePeriod ?? '',
+    currentLocation: r?.currentLocation ?? '',
+    preferredTimeZone: r?.preferredTimeZone ?? '',
+    primaryTechStack: (r?.primaryTechStack ?? []).join(', '),
     coreCompetencies: (r?.coreCompetencies ?? []).join(', '),
     achievements: (r?.achievements ?? []).join('\n'),
     interests: (r?.interests ?? []).join(', '),
@@ -165,6 +167,10 @@ function formToPayload(form: FormState): Partial<AdminResume> {
     yearsOfExperience: form.yearsOfExperience === '' ? 0 : Number(form.yearsOfExperience) || 0,
     availability: form.availability.trim(),
     englishLevel: form.englishLevel.trim(),
+    noticePeriod: form.noticePeriod.trim(),
+    currentLocation: form.currentLocation.trim(),
+    preferredTimeZone: form.preferredTimeZone.trim(),
+    primaryTechStack: list(form.primaryTechStack),
     coreCompetencies: list(form.coreCompetencies),
     achievements: lines(form.achievements),
     interests: list(form.interests),
@@ -236,19 +242,20 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
 
       {/* Template & mode */}
       <Card title="Template & Mode">
-        <div className="rf-grid-2" style={grid2}>
-          <Field label="Resume template">
-            <select value={form.template} onChange={txt('template')} style={input}>
-              {TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Resume mode">
-            <select value={form.resumeMode} onChange={txt('resumeMode')} style={input}>
-              <option value="employee">Employee Resume — full contact details</option>
-              <option value="client">Client Resource — contact details hidden</option>
-            </select>
-          </Field>
-        </div>
+        <Field label="Resume mode">
+          <select value={form.resumeMode} onChange={txt('resumeMode')} style={{ ...input, maxWidth: 420 }}>
+            <option value="employee">Employee Resume — full contact details</option>
+            <option value="client">Client Resource — contact details hidden</option>
+          </select>
+        </Field>
+        <div style={{ height: 14 }} />
+        <Field label="Resume template">
+          <TemplatePicker
+            value={form.template}
+            mode={form.resumeMode}
+            onChange={(id) => set('template', id)}
+          />
+        </Field>
         <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 8, lineHeight: 1.5 }}>
           Client Resource mode removes email, phone, address, links, photo, interests and
           references from the generated PDF entirely — they are never written to the file.
@@ -272,10 +279,27 @@ export default function ResumeForm({ initial, submitLabel, onSubmit, onCancel }:
             <input value={form.photoUrl} onChange={txt('photoUrl')} placeholder="https://…" style={input} />
           </Field>
         </div>
+        <div className="rf-grid-2" style={{ ...grid2, marginTop: 12 }}>
+          <Field label="Notice period">
+            <input value={form.noticePeriod} onChange={txt('noticePeriod')} placeholder="30 days" style={input} />
+          </Field>
+          <Field label="Current location">
+            <input value={form.currentLocation} onChange={txt('currentLocation')} placeholder="Asansol, India" style={input} />
+          </Field>
+          <Field label="Preferred time zone">
+            <input value={form.preferredTimeZone} onChange={txt('preferredTimeZone')} placeholder="IST / UTC+5:30 · overlaps EST" style={input} />
+          </Field>
+          <Field label="Primary tech stack (comma-separated)">
+            <input value={form.primaryTechStack} onChange={txt('primaryTechStack')} placeholder="React, Node.js, AWS" style={input} />
+          </Field>
+        </div>
         <div style={{ height: 12 }} />
         <Field label="Core competencies (comma-separated)">
           <input value={form.coreCompetencies} onChange={txt('coreCompetencies')} placeholder="System Design, Code Review, Mentoring" style={input} />
         </Field>
+        <div style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 8, lineHeight: 1.5 }}>
+          These appear on Client Resource profiles. Employee resumes ignore any left blank.
+        </div>
       </Card>
 
       {/* Summary */}
