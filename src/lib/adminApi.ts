@@ -141,6 +141,30 @@ export interface AdminResume {
   updatedAt: string;
 }
 
+export type DeveloperType =
+  | 'Full Stack' | 'MERN Stack' | 'React' | 'Next.js' | 'Node.js'
+  | 'Java' | 'Python' | 'React Native' | 'Angular' | 'Other';
+
+export type DeveloperResumeStatus = 'active' | 'inactive';
+
+export interface AdminDeveloperResume {
+  _id: string;
+  name: string;
+  developerType: DeveloperType;
+  experienceYears: number;
+  primarySkill: string;
+  skills: string[];
+  resumeUrl: string;
+  resumeName: string;
+  resumeType: string;
+  resumeSize: number;
+  profileImageUrl: string;
+  status: DeveloperResumeStatus;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StatsData {
   applications: Record<string, number> & { total: number };
   enquiries: Record<string, number> & { total: number };
@@ -540,6 +564,39 @@ export const adminApi = {
     }),
   deleteResume: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/admin/resumes/${id}`, { method: 'DELETE' }),
+
+  // ── Active Resume (developer resume repository) ────────────────────────────
+  developerResumes: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<AdminDeveloperResume>>(
+      `/api/admin/active-resumes${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  getDeveloperResume: (id: string) =>
+    apiFetch<{ success: boolean; data: AdminDeveloperResume }>(`/api/admin/active-resumes/${id}`),
+  createDeveloperResume: (body: Partial<AdminDeveloperResume>) =>
+    apiFetch<{ success: boolean; data: AdminDeveloperResume }>('/api/admin/active-resumes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateDeveloperResume: (id: string, body: Partial<AdminDeveloperResume>) =>
+    apiFetch<{ success: boolean; data: AdminDeveloperResume }>(`/api/admin/active-resumes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  deleteDeveloperResume: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/active-resumes/${id}`, { method: 'DELETE' }),
+  uploadDeveloperResumeFile: async (file: File, kind: 'resume' | 'image' = 'resume') => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('kind', kind);
+    const res = await fetch('/api/admin/active-resumes/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tok()}` },
+      body: fd,
+    });
+    const json = await res.json().catch(() => ({ error: 'Invalid response' }));
+    if (!res.ok) throw new Error(json.error ?? 'Upload failed');
+    return json as { success: boolean; fileUrl: string; fileName: string; fileType: string; fileSize: number };
+  },
 
   // ── Bills ─────────────────────────────────────────────────────────────────
   billStats: () =>
