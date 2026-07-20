@@ -6,13 +6,18 @@ import mongoose, { Schema, models, model } from 'mongoose';
 
 const ExperienceSchema = new Schema(
   {
-    company:     { type: String, default: '' },
-    role:        { type: String, default: '' },
-    location:    { type: String, default: '' },
-    startDate:   { type: String, default: '' },
-    endDate:     { type: String, default: '' },
-    current:     { type: Boolean, default: false },
-    description: { type: String, default: '' },
+    company:        { type: String, default: '' },
+    role:           { type: String, default: '' },
+    location:       { type: String, default: '' },
+    startDate:      { type: String, default: '' },
+    endDate:        { type: String, default: '' },
+    current:        { type: Boolean, default: false },
+    description:    { type: String, default: '' },
+    // Premium-template fields (additive; older records simply have empty values)
+    employmentType: { type: String, default: '' },
+    technologies:   { type: [String], default: [] },
+    responsibilities: { type: [String], default: [] },
+    achievements:   { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -33,8 +38,26 @@ const ProjectSchema = new Schema(
   {
     name:         { type: String, default: '' },
     description:  { type: String, default: '' },
+    // `link` is the legacy field; `liveUrl` supersedes it and falls back to it.
     link:         { type: String, default: '' },
     technologies: { type: [String], default: [] },
+    // Premium-template fields (additive)
+    role:            { type: String, default: '' },
+    duration:        { type: String, default: '' },
+    liveUrl:         { type: String, default: '' },
+    repoUrl:         { type: String, default: '' },
+    responsibilities: { type: [String], default: [] },
+    highlights:      { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
+const ReferenceSchema = new Schema(
+  {
+    name:        { type: String, default: '' },
+    designation: { type: String, default: '' },
+    company:     { type: String, default: '' },
+    contact:     { type: String, default: '' },
   },
   { _id: false }
 );
@@ -58,7 +81,8 @@ const CertificationSchema = new Schema(
 
 const ResumeSchema = new Schema(
   {
-    fullName:       { type: String, required: true, trim: true },
+    // No field is mandatory — every section auto-hides when empty.
+    fullName:       { type: String, default: '', trim: true },
     headline:       { type: String, default: '' },
     email:          { type: String, default: '' },
     phone:          { type: String, default: '' },
@@ -74,7 +98,26 @@ const ResumeSchema = new Schema(
     projects:       { type: [ProjectSchema], default: [] },
     certifications: { type: [CertificationSchema], default: [] },
     languages:      { type: [String], default: [] },
-    template:       { type: String, enum: ['classic', 'modern', 'minimal'], default: 'classic' },
+
+    // ── Premium-template additions (all optional, backward compatible) ────────
+    // 'employee'  → full personal contact details are rendered
+    // 'client'    → resource profile; contact data is stripped before render
+    resumeMode:       { type: String, enum: ['employee', 'client'], default: 'employee' },
+    photoUrl:         { type: String, default: '' },
+    yearsOfExperience:{ type: Number, default: 0, min: 0, max: 60 },
+    availability:     { type: String, default: '' },
+    englishLevel:     { type: String, default: '' },
+    coreCompetencies: { type: [String], default: [] },
+    achievements:     { type: [String], default: [] },
+    interests:        { type: [String], default: [] },
+    references:       { type: [ReferenceSchema], default: [] },
+
+    template: {
+      type: String,
+      // Legacy HTML templates keep working unchanged; the last two are react-pdf.
+      enum: ['classic', 'modern', 'minimal', 'corporate-sidebar', 'executive-professional'],
+      default: 'classic',
+    },
   },
   { timestamps: true }
 );

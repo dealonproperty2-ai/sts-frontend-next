@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { connectDb } from '@/server/db';
 import { verifyAdmin } from '@/server/adminAuth';
 import Resume from '@/server/models/Resume';
-import { isNonEmptyString } from '@/server/validation';
 import { buildResume } from '@/server/resumeHelpers';
 
 export const runtime = 'nodejs';
@@ -56,10 +55,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  // Every field is optional by design — sections auto-hide when empty.
   const data = buildResume(body, { partial: false });
-  if (!isNonEmptyString(data.fullName as string, 200)) {
-    return NextResponse.json({ error: 'Full name is required' }, { status: 400 });
-  }
 
   try {
     await connectDb();

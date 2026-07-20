@@ -87,6 +87,10 @@ export interface ResumeExperience {
   endDate: string;
   current: boolean;
   description: string;
+  employmentType?: string;
+  technologies?: string[];
+  responsibilities?: string[];
+  achievements?: string[];
 }
 
 export interface ResumeEducation {
@@ -103,7 +107,22 @@ export interface ResumeProjectItem {
   description: string;
   link: string;
   technologies: string[];
+  role?: string;
+  duration?: string;
+  liveUrl?: string;
+  repoUrl?: string;
+  responsibilities?: string[];
+  highlights?: string[];
 }
+
+export interface ResumeReference {
+  name: string;
+  designation: string;
+  company: string;
+  contact: string;
+}
+
+export type ResumeMode = 'employee' | 'client';
 
 export interface ResumeCertification {
   name: string;
@@ -116,7 +135,9 @@ export interface ResumeSkillCategory {
   items: string[];
 }
 
-export type ResumeTemplate = 'classic' | 'modern' | 'minimal';
+export type ResumeTemplate =
+  | 'classic' | 'modern' | 'minimal'
+  | 'corporate-sidebar' | 'executive-professional';
 
 export interface AdminResume {
   _id: string;
@@ -137,6 +158,16 @@ export interface AdminResume {
   certifications: ResumeCertification[];
   languages: string[];
   template: ResumeTemplate;
+  // Premium-template additions (optional — legacy records omit them)
+  resumeMode?: ResumeMode;
+  photoUrl?: string;
+  yearsOfExperience?: number;
+  availability?: string;
+  englishLevel?: string;
+  coreCompetencies?: string[];
+  achievements?: string[];
+  interests?: string[];
+  references?: ResumeReference[];
   createdAt: string;
   updatedAt: string;
 }

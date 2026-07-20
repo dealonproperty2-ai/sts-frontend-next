@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { connectDb } from '@/server/db';
 import { verifyAdmin } from '@/server/adminAuth';
 import Resume from '@/server/models/Resume';
-import { isNonEmptyString } from '@/server/validation';
 import { buildResume } from '@/server/resumeHelpers';
 
 export const runtime = 'nodejs';
@@ -42,9 +41,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const update = buildResume(body, { partial: true });
-  if ('fullName' in update && !isNonEmptyString(update.fullName as string, 200)) {
-    return NextResponse.json({ error: 'Full name cannot be empty' }, { status: 400 });
-  }
   if (!Object.keys(update).length) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
