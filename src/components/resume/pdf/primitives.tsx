@@ -49,6 +49,7 @@ export function ResumeSection({
   show = true,
   rule = true,
   titleStyle,
+  wrap = true,
 }: {
   title?: string;
   children?: React.ReactNode;
@@ -56,11 +57,13 @@ export function ResumeSection({
   show?: boolean;
   rule?: boolean;
   titleStyle?: PdfStyle;
+  /** false keeps the whole block on one page so headings never orphan. */
+  wrap?: boolean;
 }) {
   const kids = React.Children.toArray(children).filter(Boolean);
   if (!show || kids.length === 0) return null;
   return (
-    <View style={s.section} wrap>
+    <View style={s.section} wrap={wrap}>
       {title ? <Text style={titleStyle ? [base.sectionTitle, titleStyle].flat() : base.sectionTitle}>{title}</Text> : null}
       {title && rule ? <View style={base.rule} /> : null}
       {kids}

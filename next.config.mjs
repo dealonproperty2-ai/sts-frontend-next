@@ -23,6 +23,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // @react-pdf/renderer ships ESM-only; without this the bundler throws
+  // "ESM packages need to be imported" and the whole resume view fails.
+  transpilePackages: ['@react-pdf/renderer'],
 
   images: {
     formats: ['image/avif', 'image/webp'],

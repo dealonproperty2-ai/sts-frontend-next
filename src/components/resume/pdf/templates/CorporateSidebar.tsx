@@ -72,14 +72,14 @@ export default function CorporateSidebar({ view, logoUrl }: TemplateProps) {
           <Image src={view.photoUrl} style={{ width: 74, height: 74, borderRadius: 37, marginBottom: 10 }} />
         ) : null}
 
-        <ResumeSection title="Profile" show={hasContent(view.yearsOfExperience, view.englishLevel, view.availability)} rule titleStyle={s.railTitle}>
+        <ResumeSection wrap={false} title="Profile" show={hasContent(view.yearsOfExperience, view.englishLevel, view.availability)} rule titleStyle={s.railTitle}>
           <MetaRow label="Experience" value={view.yearsOfExperience ? `${view.yearsOfExperience}+ Years` : ''} />
           <MetaRow label="English" value={view.englishLevel} />
           <MetaRow label="Availability" value={view.availability} />
         </ResumeSection>
 
         {/* Contact is structurally absent in client mode. */}
-        <ResumeSection title="Contact" show={contacts.length > 0} rule titleStyle={s.railTitle}>
+        <ResumeSection wrap={false} title="Contact" show={contacts.length > 0} rule titleStyle={s.railTitle}>
           {contacts.map((v, i) => <Text key={i} style={s.contactLine}>{v}</Text>)}
         </ResumeSection>
 
@@ -87,11 +87,11 @@ export default function CorporateSidebar({ view, logoUrl }: TemplateProps) {
           {view.skillGroups.map((g, i) => <ResumeSkillGroup key={i} group={g} />)}
         </ResumeSection>
 
-        <ResumeSection title="Core Competencies" show={view.coreCompetencies.length > 0} rule titleStyle={s.railTitle}>
+        <ResumeSection wrap={false} title="Core Competencies" show={view.coreCompetencies.length > 0} rule titleStyle={s.railTitle}>
           <Chips items={view.coreCompetencies} />
         </ResumeSection>
 
-        <ResumeSection title="Languages" show={view.languages.length > 0} rule titleStyle={s.railTitle}>
+        <ResumeSection wrap={false} title="Languages" show={view.languages.length > 0} rule titleStyle={s.railTitle}>
           <Text style={{ fontSize: type.small, color: color.text, lineHeight: 1.5 }}>
             {view.languages.join(', ')}
           </Text>

@@ -30,8 +30,10 @@ const s = StyleSheet.create({
   },
   header: { marginBottom: 12 },
   headRow: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontFamily: 'Helvetica-Bold', fontSize: type.name, color: color.primary, letterSpacing: 0.3 },
-  role: { fontSize: type.role, color: color.text, marginTop: 2 },
+  // Explicit line heights: inheriting the 1.6 body leading mis-measures the
+  // large display sizes and lets the role collide with the name.
+  name: { fontFamily: 'Helvetica-Bold', fontSize: type.name, color: color.primary, letterSpacing: 0.3, lineHeight: 1.2 },
+  role: { fontSize: type.role, color: color.text, marginTop: 3, lineHeight: 1.3 },
   rule: { borderBottomWidth: 1.5, borderBottomColor: color.primary, marginTop: 10, marginBottom: 12 },
   contact: { fontSize: type.small, color: color.muted, marginTop: 6, lineHeight: 1.5 },
   logo: { width: 104 },
