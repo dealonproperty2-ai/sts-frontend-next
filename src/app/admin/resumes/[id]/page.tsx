@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { adminApi, AdminResume, ResumeTemplate } from '@/lib/adminApi';
+import { adminApi, AdminResume, ResumeTemplate, ResumeMode } from '@/lib/adminApi';
 import ResumeDocument from '@/components/resume/ResumeDocument';
+import ResumePdfPreview, { downloadResumePdf, useLogoUrl } from '@/components/resume/pdf/ResumePdfPreview';
+import { isPdfTemplate, PDF_TEMPLATES } from '@/components/resume/pdf/registry';
 
 const PRINT_CSS = `
 @media print {
@@ -17,9 +19,12 @@ const PRINT_CSS = `
 `;
 
 const TEMPLATES: { value: ResumeTemplate; label: string }[] = [
+  // Legacy HTML templates (html2canvas export) — unchanged behaviour.
   { value: 'classic', label: 'Classic' },
   { value: 'modern', label: 'Modern' },
   { value: 'minimal', label: 'Minimal' },
+  // Premium react-pdf templates (true text PDF).
+  ...PDF_TEMPLATES.map(t => ({ value: t.id as ResumeTemplate, label: `${t.label} ★` })),
 ];
 
 export default function ResumeViewPage({ params }: { params: { id: string } }) {
@@ -27,6 +32,8 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const [resume, setResume] = useState<AdminResume | null>(null);
   const [template, setTemplate] = useState<ResumeTemplate>('classic');
+  const [mode, setMode] = useState<ResumeMode>('employee');
+  const logoUrl = useLogoUrl();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -41,6 +48,7 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
       const res = await adminApi.getResume(id);
       setResume(res.data);
       setTemplate(res.data.template);
+      setMode(res.data.resumeMode ?? 'employee');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load resume');
     } finally {
@@ -59,6 +67,15 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
     } catch { /* non-blocking; preview already updated */ }
   }
 
+  // Switch employee/client resource mode live and persist the choice.
+  async function changeMode(m: ResumeMode) {
+    setMode(m);
+    try {
+      await adminApi.updateResume(id, { resumeMode: m });
+      setResume(prev => (prev ? { ...prev, resumeMode: m } : prev));
+    } catch { /* non-blocking; preview already updated */ }
+  }
+
   function handlePrint() {
     const el = document.getElementById('resume-doc');
     const printArea = document.getElementById('resume-print-area');
@@ -71,6 +88,13 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
     if (!resume) return;
     setDownloading(true);
     try {
+      // Premium templates export a real text-based PDF via react-pdf.
+      if (isPdfTemplate(template)) {
+        await downloadResumePdf(resume, { mode, template, logoUrl });
+        return;
+      }
+
+      // ── Legacy html2canvas path (classic / modern / minimal) — unchanged ──
       const el = document.getElementById('resume-doc');
       if (!el) return;
       const html2canvas = (await import('html2canvas')).default;
@@ -138,7 +162,20 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
                   {TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
-              <button onClick={handlePrint} style={btnSecondary}>Print</button>
+              {/* Resume mode applies to the premium templates. */}
+              {isPdfTemplate(template) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, color: 'var(--fg-4)' }}>Mode</span>
+                  <select value={mode} onChange={e => changeMode(e.target.value as ResumeMode)} style={selectSm}>
+                    <option value="employee">Employee Resume</option>
+                    <option value="client">Client Resource</option>
+                  </select>
+                </div>
+              )}
+              {/* The premium preview is the real PDF — its own viewer handles printing. */}
+              {!isPdfTemplate(template) && (
+                <button onClick={handlePrint} style={btnSecondary}>Print</button>
+              )}
               <button onClick={handleDownload} disabled={downloading} style={btnPrimary}>{downloading ? 'Generating…' : 'Download PDF'}</button>
               <Link href={`/admin/resumes/${id}/edit`} style={{ ...btnSecondary, textDecoration: 'none' }}>Edit</Link>
               <button onClick={() => { setDeleteOpen(true); setDeleteError(''); }} style={btnDangerFull}>Delete</button>
@@ -146,14 +183,24 @@ export default function ResumeViewPage({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        {/* Preview */}
-        <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-2)', padding: 24 }}>
+        {/* Preview — premium templates render the actual PDF, so preview === export */}
+        <div
+          style={
+            resume && isPdfTemplate(template)
+              ? { flex: 1, overflow: 'hidden', background: 'var(--bg-2)' }
+              : { flex: 1, overflow: 'auto', background: 'var(--bg-2)', padding: 24 }
+          }
+        >
           {loading ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-4)', fontSize: 13 }}>Loading…</div>
           ) : error ? (
             <div style={{ padding: 24, color: '#f87171', fontSize: 13 }}>{error}</div>
           ) : resume ? (
-            <ResumeDocument id="resume-doc" resume={resume} template={template} />
+            isPdfTemplate(template) ? (
+              <ResumePdfPreview resume={resume} mode={mode} template={template} />
+            ) : (
+              <ResumeDocument id="resume-doc" resume={resume} template={template} />
+            )
           ) : (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-4)', fontSize: 13 }}>Resume not found</div>
           )}
