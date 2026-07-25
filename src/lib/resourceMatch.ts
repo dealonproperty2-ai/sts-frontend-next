@@ -73,14 +73,18 @@ export function scoreResource(resource: MatchableResource, req: ResourceRequirem
   const reasons: string[] = [];
   let matchedSkills: string[] = [];
   let missingSkills: string[] = [];
+  let techRequired = false;
+  let techSat = 1; // relevance gate; only applied when a technology is required
 
   // Technology (weight 3)
   if (req.technology && req.technology.trim()) {
+    techRequired = true;
     const t = norm(req.technology);
     let sat = 0;
     if (primary === t || resSkillSet.has(t)) sat = 1;
     else if (secondary === t) sat = 0.7;
     else if (primary.includes(t) || resSkills.some((s) => s.includes(t))) sat = 0.4;
+    techSat = sat;
     parts.push({ weight: 3, sat });
     reasons.push(sat >= 1 ? `Primary tech: ${req.technology}` : sat > 0 ? `Related tech: ${req.technology}` : `Missing tech: ${req.technology}`);
   }
@@ -131,9 +135,14 @@ export function scoreResource(resource: MatchableResource, req: ResourceRequirem
   }
 
   const totalWeight = parts.reduce((s, p) => s + p.weight, 0);
-  const score = totalWeight
-    ? Math.round((parts.reduce((s, p) => s + p.weight * p.sat, 0) / totalWeight) * 100)
-    : 0;
+  const raw = totalWeight ? parts.reduce((s, p) => s + p.weight * p.sat, 0) / totalWeight : 0;
+
+  // Technology relevance gate: a candidate who doesn't know the required primary
+  // technology is barely a match regardless of seniority/availability, so the
+  // score is scaled toward zero (×0.15 at worst) rather than earning partial
+  // credit for peripheral criteria. Roles with no tech requirement are unaffected.
+  const gate = techRequired ? 0.15 + 0.85 * techSat : 1;
+  const score = Math.round(raw * gate * 100);
 
   return { score, matchedSkills, missingSkills, reasons };
 }
