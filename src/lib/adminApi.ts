@@ -1,4 +1,76 @@
+import type { MatchResult, ResourceRequirement } from '@/lib/resourceMatch';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type ResourceType = 'internal' | 'external';
+export type AvailabilityStatus =
+  | 'available' | 'on_project' | 'reserved'
+  | 'interview_scheduled' | 'joining_soon' | 'on_leave' | 'inactive';
+
+export interface ResourceCertification { name: string; issuer: string; date: string }
+export interface ResourceExperienceItem {
+  company: string; role: string; location: string; startDate: string;
+  endDate: string; current: boolean; description: string; responsibilities: string[];
+}
+export interface ResourceProjectEntry {
+  name: string; description: string; role: string; duration: string; link: string; technologies: string[];
+}
+export interface ResourceEducationItem {
+  institution: string; degree: string; field: string; startDate: string; endDate: string; grade: string;
+}
+
+export interface AdminResource {
+  _id: string;
+  resourceType: ResourceType;
+  employee?: string | { _id: string; name: string; employeeId: string; designation: string; email?: string; phone?: string; workLocation?: string } | null;
+  fullName: string;
+  employeeCode: string;
+  profilePhotoUrl: string;
+  designation: string;
+  experienceYears: number;
+  skills: string[];
+  primaryTechnology: string;
+  secondaryTechnology: string;
+  currentCompany: string;
+  location: string;
+  timeZone: string;
+  availabilityStatus: AvailabilityStatus;
+  resumeUrl: string;
+  resumeName: string;
+  resumeType: string;
+  resumeSize: number;
+  portfolioUrl: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  certifications: ResourceCertification[];
+  englishLevel: string;
+  noticePeriod: string;
+  expectedJoiningDate: string;
+  summary: string;
+  workExperience: ResourceExperienceItem[];
+  projects: ResourceProjectEntry[];
+  education: ResourceEducationItem[];
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Present only in requirement-match results. */
+  match?: MatchResult;
+}
+
+export interface ResourceStats {
+  total: number; internal: number; external: number; archived: number;
+  available: number; onProject: number; reserved: number;
+  byStatus: Record<AvailabilityStatus, number>;
+  topSkills: { skill: string; count: number }[];
+}
+
+export interface ResourceListResponse {
+  success: boolean;
+  data: AdminResource[];
+  meta: { total: number; page: number; limit: number; pages: number; matchMode: boolean; scope: string };
+}
+
+export type { ResourceRequirement };
 
 export interface AdminUser {
   _id: string;
@@ -540,4 +612,65 @@ export const adminApi = {
     apiFetch<{ data: AppointmentLetter }>(`/api/admin/appointment-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAppointmentLetter: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/admin/appointment-letters/${id}`, { method: 'DELETE' }),
+
+  // ── Active Resources ──────────────────────────────────────────────────────
+  resources: (params?: Record<string, string>) =>
+    apiFetch<ResourceListResponse>(
+      `/api/admin/resources${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  getResource: (id: string) =>
+    apiFetch<{ success: boolean; data: AdminResource }>(`/api/admin/resources/${id}`),
+  createResource: (body: Partial<AdminResource>) =>
+    apiFetch<{ success: boolean; data: AdminResource }>('/api/admin/resources', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
+  updateResource: (id: string, body: Partial<AdminResource> & { archived?: boolean }) =>
+    apiFetch<{ success: boolean; data: AdminResource }>(`/api/admin/resources/${id}`, {
+      method: 'PATCH', body: JSON.stringify(body),
+    }),
+  deleteResource: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/resources/${id}`, { method: 'DELETE' }),
+  resourceStats: () =>
+    apiFetch<{ success: boolean; data: ResourceStats }>('/api/admin/resources/stats'),
+  uploadResourceFile: async (file: File, kind: 'resume' | 'image' = 'resume') => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('kind', kind);
+    const res = await fetch('/api/admin/resources/upload', {
+      method: 'POST', headers: { Authorization: `Bearer ${tok()}` }, body: fd,
+    });
+    const json = await res.json().catch(() => ({ error: 'Invalid response' }));
+    if (!res.ok) throw new Error(json.error ?? 'Upload failed');
+    return json as { success: boolean; fileUrl: string; fileName: string; fileType: string; fileSize: number };
+  },
+  // Binary exports — fetch the blob then trigger a browser download.
+  exportResources: (opts: { ids?: string[]; format: 'csv' | 'excel' }) =>
+    downloadBlob('/api/admin/resources/export', opts),
+  zipResumes: (ids: string[]) =>
+    downloadBlob('/api/admin/resources/zip', { ids }),
+  emailResources: (body: { ids: string[]; to: string; subject?: string; message?: string }) =>
+    apiFetch<{ success: boolean; sent: number; attached: number }>('/api/admin/resources/email', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
 };
+
+/** POSTs JSON, receives a file blob, and saves it with the server's filename. */
+async function downloadBlob(url: string, body: unknown): Promise<void> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error((j as { error?: string }).error ?? 'Download failed');
+  }
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'download';
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(href);
+}

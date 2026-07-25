@@ -49,6 +49,7 @@ const NAV = [
   { href: '/admin/enquiries',            label: 'Enquiries',           icon: '◈', group: '' },
   { href: '/admin/courses',              label: 'Courses',             icon: '◧', group: '' },
   { href: '/admin/projects',            label: 'Projects',            icon: '◪', group: '' },
+  { href: '/admin/resources',           label: 'Active Resources',    icon: '◈', group: '' },
   { href: '/admin/users',               label: 'Users',               icon: '◉', group: '' },
   { href: '/admin/bills',               label: 'Office Bills',        icon: '◑', group: '' },
   { href: '/admin/employees',            label: 'Employees',           icon: '◍', group: 'HR' },
