@@ -49,8 +49,6 @@ const NAV = [
   { href: '/admin/enquiries',            label: 'Enquiries',           icon: '◈', group: '' },
   { href: '/admin/courses',              label: 'Courses',             icon: '◧', group: '' },
   { href: '/admin/projects',            label: 'Projects',            icon: '◪', group: '' },
-  { href: '/admin/resumes',             label: 'Resumes',             icon: '▤', group: '' },
-  { href: '/admin/active-resumes',      label: 'Active Resume',       icon: '◨', group: '' },
   { href: '/admin/users',               label: 'Users',               icon: '◉', group: '' },
   { href: '/admin/bills',               label: 'Office Bills',        icon: '◑', group: '' },
   { href: '/admin/employees',            label: 'Employees',           icon: '◍', group: 'HR' },
