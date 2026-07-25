@@ -23,6 +23,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // @react-pdf/renderer is ESM-only; without this the bundler throws
+  // "ESM packages need to be imported" and the resource PDF export fails.
+  transpilePackages: ['@react-pdf/renderer'],
   // Lets a build run into an isolated directory (NEXT_DIST_DIR=.next-analyze)
   // so CI/bundle analysis never clobbers a running dev server's .next cache.
   distDir: process.env.NEXT_DIST_DIR || '.next',
