@@ -5,6 +5,7 @@ import {
   adminApi, AdminResource, ResourceType, AvailabilityStatus, Employee,
   ResourceCertification, ResourceExperienceItem, ResourceProjectEntry, ResourceEducationItem,
 } from '@/lib/adminApi';
+import AuthImage from '@/components/AuthImage';
 
 export const AVAILABILITY_OPTIONS: { value: AvailabilityStatus; label: string; color: string }[] = [
   { value: 'available', label: 'Available', color: '#16A34A' },
@@ -296,10 +297,11 @@ export default function ResourceForm({
             {/* Profile photo */}
             <Field label="Profile Photo">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {form.profilePhotoUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={form.profilePhotoUrl} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }} />
-                  : <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid var(--line)' }} />}
+                <AuthImage
+                  src={form.profilePhotoUrl}
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
+                  fallback={<div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid var(--line)' }} />}
+                />
                 <label style={fileBtn}>
                   {uploadingPhoto ? 'Uploading…' : 'Upload photo'}
                   <input type="file" accept="image/*" hidden onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />

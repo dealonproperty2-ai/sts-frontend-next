@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { adminApi, AdminResource, ResourceStats, AvailabilityStatus } from '@/lib/adminApi';
 import ResourceForm, { AVAILABILITY_OPTIONS } from '@/components/ResourceForm';
+import AuthImage from '@/components/AuthImage';
 import { downloadCandidateProfile, downloadClientSubmission } from '@/lib/resourcePdf';
 
 const availMeta = (s: string) => AVAILABILITY_OPTIONS.find(o => o.value === s) ?? { value: s, label: s, color: '#64748B' };
@@ -385,10 +386,11 @@ function ResourceCard({ r, selected, onSelect, onEdit, onAvailability, onArchive
     <div style={{ background: 'var(--bg-1)', border: `1px solid ${selected ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 'var(--r-md)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', opacity: isArchived ? 0.7 : 1 }}>
       <input type="checkbox" checked={selected} onChange={onSelect} style={{ position: 'absolute', top: 14, right: 14, cursor: 'pointer' }} />
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        {r.profilePhotoUrl
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={r.profilePhotoUrl} alt="" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }} />
-          : <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>{(r.fullName || '?').charAt(0).toUpperCase()}</div>}
+        <AuthImage
+          src={r.profilePhotoUrl}
+          style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
+          fallback={<div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>{(r.fullName || '?').charAt(0).toUpperCase()}</div>}
+        />
         <div style={{ flex: 1, minWidth: 0, paddingRight: 20 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.fullName}</div>
           <div style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.designation || '—'}</div>

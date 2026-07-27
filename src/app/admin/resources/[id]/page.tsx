@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi, AdminResource } from '@/lib/adminApi';
 import { AVAILABILITY_OPTIONS } from '@/components/ResourceForm';
+import AuthImage from '@/components/AuthImage';
 import { downloadCandidateProfile } from '@/lib/resourcePdf';
 
 const availMeta = (s: string) => AVAILABILITY_OPTIONS.find(o => o.value === s) ?? { value: s, label: s, color: '#64748B' };
@@ -83,10 +84,11 @@ export default function ResourceDetailPage() {
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Hero */}
           <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)', padding: 24, display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-            {r.profilePhotoUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={r.profilePhotoUrl} alt="" style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }} />
-              : <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 800 }}>{(r.fullName || '?').charAt(0).toUpperCase()}</div>}
+            <AuthImage
+              src={r.profilePhotoUrl}
+              style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
+              fallback={<div style={{ width: 88, height: 88, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 800 }}>{(r.fullName || '?').charAt(0).toUpperCase()}</div>}
+            />
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--fg)' }}>{r.fullName}</div>
               <div style={{ fontSize: 14, color: 'var(--accent)', fontWeight: 600, marginTop: 2 }}>{r.designation || '—'}</div>
