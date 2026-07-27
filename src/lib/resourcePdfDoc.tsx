@@ -15,7 +15,7 @@
  * is fully text-based (built-in Helvetica) — print-sharp and ATS-parseable.
  */
 import {
-  Document, Page, Text, View, Image, StyleSheet, pdf,
+  Document, Page, Text, View, StyleSheet, pdf,
 } from '@react-pdf/renderer';
 import type { AdminResource } from '@/lib/adminApi';
 
@@ -95,9 +95,10 @@ const s = StyleSheet.create({
   header: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 26, paddingHorizontal: 42 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  logo: { width: 34, height: 34, objectFit: 'contain', marginRight: 11 },
-  hName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: INK, letterSpacing: 0.4 },
-  hTag: { fontSize: 7, color: MUTED, marginTop: 1.5, letterSpacing: 0.2 },
+  // Wordmark: the company name IS the brand mark here, so it carries the extra
+  // weight and tracking a logo would otherwise have provided.
+  hName: { fontSize: 14.5, fontFamily: 'Helvetica-Bold', color: INK, letterSpacing: 1.5, lineHeight: 1.25 },
+  hTag: { fontSize: 7, color: MUTED, marginTop: 2.5, letterSpacing: 0.45 },
   headerRight: { alignItems: 'flex-end' },
   hContact: { fontSize: 7.5, color: MUTED, marginBottom: 1 },
   rule: { flexDirection: 'row', marginTop: 12, height: 2.6, borderRadius: 2 },
@@ -112,8 +113,10 @@ const s = StyleSheet.create({
   fStrong: { fontSize: 6.8, color: BLUE, fontFamily: 'Helvetica-Bold', letterSpacing: 0.6 },
 
   // Candidate header
-  candName: { fontSize: 21, fontFamily: 'Helvetica-Bold', color: INK },
-  candRole: { fontSize: 11.5, color: BLUE, fontFamily: 'Helvetica-Bold', marginTop: 2 },
+  // The 21pt name needs an explicit line height: inheriting the page's 1.5 left
+  // the descenders of the name sitting on top of the designation beneath it.
+  candName: { fontSize: 21, fontFamily: 'Helvetica-Bold', color: INK, lineHeight: 1.25 },
+  candRole: { fontSize: 11.5, color: BLUE, fontFamily: 'Helvetica-Bold', marginTop: 5, lineHeight: 1.35 },
   badge: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: '#fff', paddingVertical: 3.5, paddingHorizontal: 9, borderRadius: 3 },
   factStrip: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, backgroundColor: CARD, borderWidth: 0.75, borderColor: LINE, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 4 },
   fact: { paddingVertical: 5, paddingHorizontal: 10, minWidth: '20%' },
@@ -122,7 +125,7 @@ const s = StyleSheet.create({
 
   // Sections
   section: { marginTop: 17 },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 9 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
   sectionMark: { width: 4, height: 13, backgroundColor: BLUE, borderRadius: 2, marginRight: 7 },
   sectionTitle: { fontSize: 10.5, fontFamily: 'Helvetica-Bold', color: INK, letterSpacing: 0.8, textTransform: 'uppercase' },
 
@@ -164,7 +167,9 @@ const s = StyleSheet.create({
 
   // Multi-candidate summary page
   coverKicker: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: BLUE, letterSpacing: 1.5, marginBottom: 4 },
-  coverTitle: { fontSize: 25, fontFamily: 'Helvetica-Bold', color: INK },
+  // Same reason as candName: without an explicit line height this 25pt title
+  // gets a box sized from the inherited 9.5pt and overruns whatever follows.
+  coverTitle: { fontSize: 25, fontFamily: 'Helvetica-Bold', color: INK, lineHeight: 1.25 },
   coverMsg: { fontSize: 10, color: BODY, marginTop: 10, lineHeight: 1.65 },
   sumRow: { flexDirection: 'row', borderWidth: 0.75, borderColor: LINE, borderRadius: 6, padding: 11, marginBottom: 8, alignItems: 'flex-start' },
   sumIndex: { width: 22, height: 22, borderRadius: 11, backgroundColor: BLUE, color: '#fff', fontSize: 9, fontFamily: 'Helvetica-Bold', textAlign: 'center', paddingTop: 5, marginRight: 10 },
@@ -178,14 +183,12 @@ function fmtDate(v?: string) {
 }
 
 /* ── Shared chrome ───────────────────────────────────────────────────────── */
-function Header({ logo }: { logo?: string }) {
+function Header() {
   return (
     <View style={s.header} fixed>
       <View style={s.headerRow}>
         <View style={s.headerLeft}>
-          {/* react-pdf Image primitive (not an HTML img); alt is not applicable */}
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          {logo ? <Image src={logo} style={s.logo} /> : null}
+          {/* Typographic wordmark only — deliberately no logo/image. */}
           <View>
             <Text style={s.hName}>{COMPANY.name}</Text>
             <Text style={s.hTag}>{COMPANY.tagline}</Text>
@@ -218,9 +221,15 @@ function Footer() {
   );
 }
 
+/**
+ * `minPresenceAhead` reserves space for the start of the section's content. If
+ * that much room isn't left on the page the heading moves to the next page WITH
+ * its content, instead of stranding at the bottom above a page-sized gap — which
+ * is what produced the empty half-page under "WORK EXPERIENCE".
+ */
 function SectionTitle({ title }: { title: string }) {
   return (
-    <View style={s.sectionHead}>
+    <View style={s.sectionHead} minPresenceAhead={68}>
       <View style={s.sectionMark} />
       <Text style={s.sectionTitle}>{title}</Text>
     </View>
@@ -292,8 +301,12 @@ function CandidateProfile({ r }: { r: AdminResource }) {
           {r.workExperience.map((w, i) => {
             const resp = (w.responsibilities ?? []).filter(Boolean);
             return (
-              <View key={i} style={s.expCard} wrap={false}>
-                <View style={s.cardTopRow}>
+              // No `wrap={false}` here: a role with many responsibilities can be
+              // taller than the printable area, and forcing it onto one page
+              // either overflowed or pushed a near-empty page. It now flows
+              // across pages; the pieces that must not split say so themselves.
+              <View key={i} style={s.expCard}>
+                <View style={s.cardTopRow} wrap={false} minPresenceAhead={40}>
                   <View style={{ flex: 1, paddingRight: 10 }}>
                     <Text style={s.cardTitle}>{w.role || 'Role'}</Text>
                     {!!w.company && <Text style={s.cardSub}>{w.company}</Text>}
@@ -306,9 +319,9 @@ function CandidateProfile({ r }: { r: AdminResource }) {
                 {!!w.description && <Text style={s.cardDesc}>{w.description}</Text>}
                 {resp.length > 0 && (
                   <>
-                    <Text style={s.subLabel}>Key Responsibilities</Text>
+                    <Text style={s.subLabel} minPresenceAhead={26}>Key Responsibilities</Text>
                     {resp.map((b, bi) => (
-                      <View key={bi} style={s.bullet}>
+                      <View key={bi} style={s.bullet} wrap={false}>
                         <Text style={s.bulletDot}>•</Text>
                         <Text style={s.bulletText}>{b}</Text>
                       </View>
@@ -410,12 +423,12 @@ function ConfidentialityNotice() {
 }
 
 /* ── Multi-candidate summary page ────────────────────────────────────────── */
-function SummaryPage({ resources, logo, clientName, message }: {
-  resources: AdminResource[]; logo?: string; clientName?: string; message?: string;
+function SummaryPage({ resources, clientName, message }: {
+  resources: AdminResource[]; clientName?: string; message?: string;
 }) {
   return (
     <Page size="A4" style={s.page}>
-      <Header logo={logo} />
+      <Header />
       <Text style={s.coverKicker}>CANDIDATE SUBMISSION</Text>
       <Text style={s.coverTitle}>Shortlisted Candidates</Text>
       {!!clientName && <Text style={s.candRole}>Prepared exclusively for {clientName}</Text>}
@@ -457,16 +470,16 @@ function SummaryPage({ resources, logo, clientName, message }: {
 }
 
 /* ── Document assembly ───────────────────────────────────────────────────── */
-function buildDocument(resources: AdminResource[], opts: { logo?: string; clientName?: string; message?: string }) {
-  const { logo, clientName, message } = opts;
+function buildDocument(resources: AdminResource[], opts: { clientName?: string; message?: string }) {
+  const { clientName, message } = opts;
   const multi = resources.length > 1;
   const title = multi ? 'Candidate Submission — Step To Soft' : `${resources[0]?.fullName ?? 'Candidate'} — Profile`;
   return (
     <Document title={title} author={COMPANY.name} subject="Confidential Candidate Submission" creator={COMPANY.name}>
-      {multi && <SummaryPage resources={resources} logo={logo} clientName={clientName} message={message} />}
+      {multi && <SummaryPage resources={resources} clientName={clientName} message={message} />}
       {resources.map((r, i) => (
         <Page key={i} size="A4" style={s.page}>
-          <Header logo={logo} />
+          <Header />
           <CandidateProfile r={r} />
           {/* Confidentiality notice closes the document after the final candidate. */}
           {i === resources.length - 1 && <ConfidentialityNotice />}
@@ -477,14 +490,14 @@ function buildDocument(resources: AdminResource[], opts: { logo?: string; client
   );
 }
 
-export function CandidateProfileDocument({ resource, logo }: { resource: AdminResource; logo?: string }) {
-  return buildDocument([resource], { logo });
+export function CandidateProfileDocument({ resource }: { resource: AdminResource }) {
+  return buildDocument([resource], {});
 }
 
-export function ClientSubmissionDocument({ resources, clientName, message, logo }: {
-  resources: AdminResource[]; clientName?: string; message?: string; logo?: string;
+export function ClientSubmissionDocument({ resources, clientName, message }: {
+  resources: AdminResource[]; clientName?: string; message?: string;
 }) {
-  return buildDocument(resources, { logo, clientName, message });
+  return buildDocument(resources, { clientName, message });
 }
 
 /** Renders a react-pdf document element to a Blob (browser-side). */

@@ -46,49 +46,36 @@ function saveBlob(blob: Blob, filename: string) {
 const safeName = (s: string) =>
   (s || 'candidate').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'candidate';
 
-// Load the company logo once as a data URI so react-pdf embeds it without a
-// network fetch during rendering (which would otherwise risk a broken image).
-// Cached across calls; failure degrades gracefully to a text-only header.
-let logoPromise: Promise<string | undefined> | null = null;
-function loadLogo(): Promise<string | undefined> {
-  if (logoPromise) return logoPromise;
-  logoPromise = (async () => {
-    try {
-      const res = await fetch('/logo3.png');
-      if (!res.ok) return undefined;
-      const blob = await res.blob();
-      // Guard against a non-image response (e.g. an HTML 404 page) that would
-      // otherwise be handed to react-pdf as a corrupt image.
-      if (blob.type && !blob.type.startsWith('image/')) return undefined;
-      const dataUrl = await new Promise<string | undefined>((resolve) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(typeof fr.result === 'string' ? fr.result : undefined);
-        fr.onerror = () => resolve(undefined);
-        fr.readAsDataURL(blob);
-      });
-      if (!dataUrl || !dataUrl.startsWith('data:image/')) return undefined;
-      // Decode it in the browser first: react-pdf's PNG parser blocks the main
-      // thread on an undecodable image, so we only pass logos we know are valid.
-      const decoded = await new Promise<boolean>((resolve) => {
-        const img = new window.Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = dataUrl;
-      });
-      return decoded ? dataUrl : undefined;
-    } catch (err) {
-      console.error('[PDF] logo load failed; continuing without logo', err);
-      return undefined;
-    }
-  })();
-  return logoPromise;
+/**
+ * react-pdf only settles its render promise once yoga-layout's WebAssembly
+ * engine has initialised. When the environment stops that from happening the
+ * promise neither resolves NOR rejects — the caller's spinner would run
+ * forever with nothing in the console. That is exactly how a missing CSP
+ * allowance for wasm/`data:` presented itself, so bound every render: a stall
+ * must surface as an actionable error instead of a permanently busy button.
+ */
+const RENDER_TIMEOUT_MS = 30_000;
+
+function withRenderTimeout(work: Promise<Blob>): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(
+        `PDF engine did not respond within ${RENDER_TIMEOUT_MS / 1000}s. If this persists, ` +
+        `check that the Content-Security-Policy allows 'wasm-unsafe-eval' plus data: and ` +
+        `blob: sources (see next.config.mjs).`,
+      ));
+    }, RENDER_TIMEOUT_MS);
+    work.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
 }
 
 /** Build a Blob for a single confidential candidate profile (no download). */
 export async function candidateProfileBlob(resource: AdminResource): Promise<Blob> {
   await ensureBufferPolyfill();
-  const [mod, logo] = await Promise.all([import('@/lib/resourcePdfDoc'), loadLogo()]);
-  return mod.docToBlob(React.createElement(mod.CandidateProfileDocument, { resource, logo }));
+  const mod = await import('@/lib/resourcePdfDoc');
+  return withRenderTimeout(
+    mod.docToBlob(React.createElement(mod.CandidateProfileDocument, { resource })),
+  );
 }
 
 /** Download a single confidential candidate profile PDF. */
@@ -113,9 +100,9 @@ export async function downloadClientSubmission(
   if (!resources.length) throw new Error('No candidates selected');
   try {
     await ensureBufferPolyfill();
-    const [mod, logo] = await Promise.all([import('@/lib/resourcePdfDoc'), loadLogo()]);
-    const blob = await mod.docToBlob(
-      React.createElement(mod.ClientSubmissionDocument, { resources, logo, ...opts }),
+    const mod = await import('@/lib/resourcePdfDoc');
+    const blob = await withRenderTimeout(
+      mod.docToBlob(React.createElement(mod.ClientSubmissionDocument, { resources, ...opts })),
     );
     const stamp = new Date().toISOString().slice(0, 10);
     const name = resources.length === 1

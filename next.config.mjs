@@ -3,20 +3,32 @@ const isDev = process.env.NODE_ENV !== 'production';
 // `next dev` (Fast Refresh + webpack eval devtool) requires 'unsafe-eval' and a
 // websocket connection for HMR. Production bundles use neither, so we keep the
 // policy strict there and only relax it in development.
+// The admin PDF export (@react-pdf/renderer) lays out documents with
+// yoga-layout, which ships its engine as WebAssembly. Compiling that module
+// needs 'wasm-unsafe-eval' — without it the browser blocks instantiation and
+// react-pdf's render promise simply never settles (no error is thrown), so the
+// download button hangs forever. 'wasm-unsafe-eval' permits WebAssembly ONLY;
+// unlike 'unsafe-eval' it does not re-enable eval()/new Function() for JS.
 const scriptSrc = [
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
   isDev ? "'unsafe-eval'" : '',
   'https://www.googletagmanager.com https://www.google-analytics.com',
 ]
   .filter(Boolean)
   .join(' ');
 
+// yoga-layout fetches its wasm binary from an inlined `data:` URI and starts a
+// worker from a `blob:` URL, so both schemes must be connectable/workable.
 const connectSrc = [
-  "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+  "connect-src 'self' data: blob: https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
   isDev ? 'ws: http://localhost:* ws://localhost:*' : '',
 ]
   .filter(Boolean)
   .join(' ');
+
+// Workers inherit script-src when worker-src is absent, which would block the
+// blob-URL worker above. Declare it explicitly instead of loosening script-src.
+const workerSrc = "worker-src 'self' blob:";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -65,6 +77,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https:",
               connectSrc,
+              workerSrc,
               "frame-src 'self' https://www.google.com",
               "object-src 'none'",
               "base-uri 'self'",
