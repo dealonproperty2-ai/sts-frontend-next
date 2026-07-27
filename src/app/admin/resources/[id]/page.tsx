@@ -34,6 +34,7 @@ export default function ResourceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfErr, setPdfErr] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const load = useCallback(async () => {
@@ -68,7 +69,12 @@ export default function ResourceDetailPage() {
         <div style={{ flex: 1 }} />
         {r.resumeUrl && <button style={btn} onClick={() => openResume(r, 'preview')}>Preview CV</button>}
         {r.resumeUrl && <button style={btn} onClick={() => openResume(r, 'download')}>Download CV</button>}
-        <button style={btnPrimary} disabled={pdfBusy} onClick={async () => { setPdfBusy(true); try { await downloadCandidateProfile(r); } finally { setPdfBusy(false); } }}>{pdfBusy ? 'Generating…' : '📄 Download Profile PDF'}</button>
+        <button style={btnPrimary} disabled={pdfBusy} onClick={async () => {
+          setPdfBusy(true); setPdfErr('');
+          try { await downloadCandidateProfile(r); }
+          catch (err) { console.error('[resource-detail] profile PDF failed', err); setPdfErr(err instanceof Error ? err.message : 'PDF generation failed'); }
+          finally { setPdfBusy(false); }
+        }}>{pdfBusy ? 'Generating…' : '📄 Download Profile PDF'}</button>
         <Link href={`/admin/resources?edit=${r._id}`} style={{ ...btn, textDecoration: 'none' }}>Edit</Link>
         <button style={btnDanger} onClick={() => setConfirmDelete(true)}>Delete</button>
       </div>
@@ -211,6 +217,13 @@ export default function ResourceDetailPage() {
         </div>
       </div>
 
+      {pdfErr && (
+        <div style={toastBox} role="alert">
+          <span style={{ flex: 1 }}>{pdfErr}</span>
+          <button onClick={() => setPdfErr('')} style={toastClose} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
       {confirmDelete && (
         <div style={overlay}>
           <div style={panelSm}>
@@ -252,3 +265,5 @@ const btnDanger: React.CSSProperties = { padding: '7px 13px', fontSize: 12, font
 const btnDangerFull: React.CSSProperties = { padding: '8px 18px', fontSize: 13, fontWeight: 600, color: '#fff', background: '#ef4444', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer' };
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 16 };
 const panelSm: React.CSSProperties = { background: 'var(--bg-1)', border: '1px solid var(--line-strong)', borderRadius: 'var(--r-md)', padding: 24, width: 420, maxWidth: '100%' };
+const toastBox: React.CSSProperties = { position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, maxWidth: 'min(560px, calc(100vw - 32px))', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', background: '#7f1d1d', color: '#fff', fontSize: 13, fontWeight: 500, borderRadius: 'var(--r-sm)', boxShadow: '0 6px 24px rgba(0,0,0,0.35)' };
+const toastClose: React.CSSProperties = { background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: 22, height: 22, borderRadius: 4, cursor: 'pointer', fontSize: 12, flexShrink: 0 };

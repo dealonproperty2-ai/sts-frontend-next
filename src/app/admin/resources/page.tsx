@@ -62,6 +62,7 @@ export default function ResourcesPage() {
   const [editTarget, setEditTarget] = useState<AdminResource | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [busy, setBusy] = useState('');
+  const [toast, setToast] = useState('');
 
   const loadStats = useCallback(async () => {
     try { const res = await adminApi.resourceStats(); setStats(res.data); } catch { /* non-blocking */ }
@@ -136,9 +137,17 @@ export default function ResourcesPage() {
   }
 
   async function runBusy(label: string, fn: () => Promise<void>) {
-    setBusy(label); setError('');
-    try { await fn(); } catch (err) { setError(err instanceof Error ? err.message : 'Action failed'); }
-    finally { setBusy(''); }
+    setBusy(label); setError(''); setToast('');
+    try {
+      await fn();
+    } catch (err) {
+      // The button state is always cleared in `finally`; surface the exact error
+      // both in the console (for debugging) and as a dismissible toast.
+      console.error(`[resources] action "${label}" failed`, err);
+      setToast(err instanceof Error ? err.message : 'Action failed');
+    } finally {
+      setBusy('');
+    }
   }
 
   return (
@@ -321,6 +330,14 @@ export default function ResourcesPage() {
 
       {formOpen && <ResourceForm target={editTarget} onClose={() => { setFormOpen(false); setEditTarget(null); }} onSaved={refresh} />}
       {emailOpen && <EmailModal ids={[...selected]} count={selected.size} onClose={() => setEmailOpen(false)} />}
+
+      {/* Action error toast — fixed so it's visible even when scrolled */}
+      {toast && (
+        <div style={toastBox} role="alert">
+          <span style={{ flex: 1 }}>{toast}</span>
+          <button onClick={() => setToast('')} style={toastClose} aria-label="Dismiss">✕</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -543,6 +560,8 @@ const cardBtn: React.CSSProperties = { padding: '5px 10px', fontSize: 12, color:
 const errBox: React.CSSProperties = { padding: '9px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--r-sm)', fontSize: 13, color: '#f87171', marginBottom: 12 };
 const bulkBar: React.CSSProperties = { position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 24px', background: 'var(--accent)', flexWrap: 'wrap' };
 const bulkBtn: React.CSSProperties = { padding: '7px 12px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 'var(--r-sm)', cursor: 'pointer' };
+const toastBox: React.CSSProperties = { position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, maxWidth: 'min(560px, calc(100vw - 32px))', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', background: '#7f1d1d', color: '#fff', fontSize: 13, fontWeight: 500, borderRadius: 'var(--r-sm)', boxShadow: '0 6px 24px rgba(0,0,0,0.35)' };
+const toastClose: React.CSSProperties = { background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: 22, height: 22, borderRadius: 4, cursor: 'pointer', fontSize: 12, flexShrink: 0 };
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 16 };
 const panelSm: React.CSSProperties = { background: 'var(--bg-1)', border: '1px solid var(--line-strong)', borderRadius: 'var(--r-md)', padding: 24, width: 460, maxWidth: '100%' };
 const shimmer: React.CSSProperties = { background: 'linear-gradient(90deg, var(--bg-2) 25%, var(--line) 50%, var(--bg-2) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' };
