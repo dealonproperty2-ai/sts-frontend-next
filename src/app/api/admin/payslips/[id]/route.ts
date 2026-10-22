@@ -7,8 +7,9 @@ import { audit } from '@/server/audit';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function GET(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   await connectDb();
   const slip = await PaySlip.findById(params.id).populate('employeeId').lean();
@@ -16,8 +17,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json({ data: slip });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function PATCH(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {
@@ -57,8 +59,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function DELETE(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   await connectDb();
   const slip = await PaySlip.findByIdAndDelete(params.id).lean();

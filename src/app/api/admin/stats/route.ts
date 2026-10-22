@@ -13,7 +13,7 @@ let _cache: { data: unknown; at: number } | null = null;
 const CACHE_TTL = 60_000; // 60 seconds
 
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const noCache = new URL(req.url).searchParams.get('refresh') === 'true';

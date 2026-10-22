@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectDb } from '@/server/db';
 import User from '@/server/models/User';
-import RefreshToken from '@/server/models/RefreshToken';
+import { revokeUserSessions } from '@/server/adminAuth';
 import { clean, isNonEmptyString } from '@/server/validation';
 import { clientKey, rateLimit } from '@/server/rateLimit';
 
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
       passwordResetExpires: null,
     });
 
-    // Invalidate all refresh tokens for this user
-    await RefreshToken.deleteMany({ userId: user._id });
+    // Invalidate all access and refresh tokens for this user
+    await revokeUserSessions(user._id);
 
     return NextResponse.json({ success: true, message: 'Password reset successfully. Please log in.' });
   } catch (err) {

@@ -45,9 +45,7 @@ src/
       apply/route.ts          # POST: careers form
       courses/route.ts        # GET: list
       courses/[slug]/route.ts # GET: by id
-      auth/login/route.ts
-      auth/send-otp/route.ts
-      auth/verify-otp/route.ts
+      auth/login/route.ts     # POST: email + password (+ TOTP when 2FA is on)
       health/route.ts
   components/           # Nav, Footer, Logo, Icon, Primitives, Parallax, HomeSections, CTABanner
   lib/courses.ts        # static course catalog + curriculum
@@ -56,7 +54,7 @@ src/
     rateLimit.ts        # in-memory token bucket
     mailer.ts           # nodemailer transporter + templates
     validation.ts       # email/string helpers
-    models/             # Enquiry, Application, User, Otp
+    models/             # Enquiry, Application, User, RefreshToken, ...
   styles/globals.css    # design tokens + utilities
 public/
   team/*.jpg            # team imagery (from sts_ui_claude_design)

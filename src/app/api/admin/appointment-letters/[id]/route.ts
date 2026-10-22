@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { connectDb } from '@/server/db';
 import { verifyAdmin } from '@/server/adminAuth';
-import AppointmentLetter from '@/server/models/AppointmentLetter';
+import AppointmentLetter, { toCleanText, toOptionalDate, toSalutation } from '@/server/models/AppointmentLetter';
 import { audit } from '@/server/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function GET(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   await connectDb();
   const letter = await AppointmentLetter.findById(params.id).populate('employeeId').lean();
@@ -16,8 +17,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json({ data: letter });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function PATCH(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {
@@ -25,10 +27,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     await connectDb();
 
     const updates: Record<string, unknown> = {};
-    const fields = ['offerDate','joiningDate','designation','department','salary','workLocation','probationPeriod','hrName','customTerms','status'];
+    const fields = ['offerDate','interviewDate','joiningDate','designation','department','salary','workLocation','probationPeriod','hrName','salutation','acceptanceDate','acceptancePlace','customTerms','status'];
     for (const f of fields) {
       if (body[f] !== undefined) {
         if (['offerDate','joiningDate'].includes(f)) updates[f] = new Date(body[f]);
+        else if (f === 'interviewDate' || f === 'acceptanceDate') updates[f] = toOptionalDate(body[f]);
+        else if (f === 'acceptancePlace') updates[f] = toCleanText(body[f]);
+        else if (f === 'salutation') updates[f] = toSalutation(body[f]);
         else if (f === 'salary') updates[f] = Number(body[f]) || 0;
         else updates[f] = body[f];
       }
@@ -45,8 +50,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function DELETE(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   await connectDb();
   const letter = await AppointmentLetter.findByIdAndDelete(params.id).lean();

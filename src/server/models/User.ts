@@ -8,6 +8,8 @@ const UserSchema = new Schema(
     password: { type: String, required: true },
     role: { type: String, default: 'user' },
     isActive: { type: Boolean, default: true },
+    // Bumped to revoke all outstanding access tokens (disable, demote, password change)
+    tokenVersion: { type: Number, default: 0 },
     // 2FA
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String, default: '' },

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { connectDb } from '@/server/db';
+import { signAccessToken } from '@/server/adminAuth';
 import User from '@/server/models/User';
 import RefreshToken from '@/server/models/RefreshToken';
 import { verifyTOTP } from '@/server/totp';
@@ -81,11 +81,7 @@ export async function POST(req: Request) {
 
     await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
 
-    const accessToken = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role },
-      secret,
-      { expiresIn: '8h' }
-    );
+    const accessToken = signAccessToken(user, secret);
 
     const rawRefresh = randomBytes(48).toString('hex');
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || '';

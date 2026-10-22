@@ -249,6 +249,7 @@ export interface AppointmentLetter {
   _id: string;
   employeeId: Employee | string;
   offerDate: string;
+  interviewDate?: string | null;
   joiningDate: string;
   designation: string;
   department: string;
@@ -256,6 +257,9 @@ export interface AppointmentLetter {
   workLocation: string;
   probationPeriod: string;
   hrName: string;
+  salutation?: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  acceptanceDate?: string | null;
+  acceptancePlace?: string;
   customTerms: string;
   status: 'generated' | 'sent' | 'downloaded';
   createdAt: string;
@@ -594,6 +598,9 @@ export const adminApi = {
     apiFetch<ListResponse<PaySlip>>(
       `/api/admin/payslips${params ? `?${new URLSearchParams(params)}` : ''}`
     ),
+  /** One payslip with its full employee record populated (the list embeds only name/ID/designation). */
+  payslip: (id: string) =>
+    apiFetch<{ data: PaySlip }>(`/api/admin/payslips/${id}`),
   createPayslip: (data: Partial<PaySlip>) =>
     apiFetch<{ data: PaySlip }>('/api/admin/payslips', { method: 'POST', body: JSON.stringify(data) }),
   updatePayslip: (id: string, data: Partial<PaySlip>) =>
@@ -606,6 +613,9 @@ export const adminApi = {
     apiFetch<ListResponse<AppointmentLetter>>(
       `/api/admin/appointment-letters${params ? `?${new URLSearchParams(params)}` : ''}`
     ),
+  /** One letter with its full employee record populated (the list omits phone and other fields). */
+  appointmentLetter: (id: string) =>
+    apiFetch<{ data: AppointmentLetter }>(`/api/admin/appointment-letters/${id}`),
   createAppointmentLetter: (data: Partial<AppointmentLetter>) =>
     apiFetch<{ data: AppointmentLetter }>('/api/admin/appointment-letters', { method: 'POST', body: JSON.stringify(data) }),
   updateAppointmentLetter: (id: string, data: Partial<AppointmentLetter>) =>

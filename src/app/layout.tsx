@@ -127,8 +127,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const headersList = headers();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
   const isAdmin = (headersList.get('x-pathname') ?? '').startsWith('/admin');
 
   return (

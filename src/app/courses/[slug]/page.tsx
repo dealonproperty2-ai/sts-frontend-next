@@ -15,7 +15,7 @@ import { SITE, COURSE_KEYWORDS, buildFAQSchema, buildBreadcrumbSchema } from '@/
 export const revalidate = 60;
 
 interface Params {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 // Look the course up in MongoDB, falling back to the static catalog when the DB
@@ -42,7 +42,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const course = await getCourse(params.slug);
+  const { slug } = await params;
+  const course = await getCourse(slug);
   if (!course) return { title: 'Course not found' };
 
   const isWebdev = course.slug === 'webdev';
@@ -76,7 +77,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function CourseDetailPage({ params }: Params) {
-  const course = await getCourse(params.slug);
+  const { slug } = await params;
+  const course = await getCourse(slug);
   if (!course) notFound();
 
   const courseJsonLd = {

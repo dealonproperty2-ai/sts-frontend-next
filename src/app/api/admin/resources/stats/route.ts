@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 // Dashboard aggregates for the stat cards and charts.
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {

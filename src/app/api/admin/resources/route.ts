@@ -18,7 +18,7 @@ const SORTS: Record<string, Record<string, 1 | -1>> = {
 const MATCH_SCAN_LIMIT = 800;
 
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);
@@ -92,7 +92,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: Record<string, unknown>;

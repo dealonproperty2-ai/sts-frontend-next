@@ -13,8 +13,9 @@ const CONTENT_TYPES: Record<string, string> = {
   png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg',
 };
 
-export async function GET(req: Request, { params }: { params: { filename: string } }) {
-  const auth = verifyAdmin(req);
+export async function GET(req: Request, { params: paramsPromise }: { params: Promise<{ filename: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const filename = path.basename(params.filename);

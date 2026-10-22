@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 // POST: disable 2FA (requires current password + TOTP or backup code)
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: Record<string, unknown>;

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 // GET: generate a new TOTP secret (not yet saved — admin must verify first)
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {

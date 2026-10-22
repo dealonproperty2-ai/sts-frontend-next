@@ -5,7 +5,8 @@ import Course from '@/server/models/Course';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(_: Request, { params }: { params: { slug: string } }) {
+export async function GET(_: Request, { params: paramsPromise }: { params: Promise<{ slug: string }> }) {
+  const params = await paramsPromise;
   try {
     await connectDb();
     const course = await Course.findOne({ slug: params.slug, isActive: true }).lean();

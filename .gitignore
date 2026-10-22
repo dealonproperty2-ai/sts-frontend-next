@@ -14,3 +14,6 @@ resume-review/
 
 # Isolated analysis build output (NEXT_DIST_DIR)
 .next-analyze/
+
+# Test coverage reports (npm run test:coverage)
+coverage/

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi, Employee, PaySlip } from '@/lib/adminApi';
 import { numberToWordsINR } from '@/lib/numberToWords';
 import { COMPANY_NAME } from '@/lib/hrConstants';
+import { downloadElementAsA4Pdf, PDF_RENDER_WIDTH_PX, safeFileSegment } from '@/lib/payslipPdf';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -16,6 +18,15 @@ function monthLabel(ym: string) {
 function fmtINR(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n);
 }
+
+function slipTotals(f: SlipForm) {
+  const gross    = f.basicSalary + f.hra + f.specialAllowance + f.bonus;
+  const totalDed = f.pfDeduction + f.professionalTax + f.otherDeductions;
+  return { gross, totalDed, net: gross - totalDed };
+}
+
+/** id of the off-screen A4 node rendered only while a PDF is being generated. */
+const PDF_SOURCE_ID = 'payslip-pdf-source';
 
 // ── Print styles ──────────────────────────────────────────────────────────────
 const PRINT_CSS = `
@@ -35,19 +46,28 @@ interface PayslipDocProps {
   totalDed: number;
   net: number;
   printDate: string;
+  /** 'pdf' = fixed-width A4 export layout; the on-screen preview uses 'screen'. */
+  variant?: 'screen' | 'pdf';
 }
 
-function PayslipDoc({ emp, form, gross, totalDed, net, printDate }: PayslipDocProps) {
+function PayslipDoc({ emp, form, gross, totalDed, net, printDate, variant = 'screen' }: PayslipDocProps) {
+  const isPdf = variant === 'pdf';
   const tblBorder = '1px solid #444';
   const thStyle: React.CSSProperties = { padding: '6px 10px', background: '#1a1a2e', color: '#fff', fontWeight: 600, fontSize: 11, textAlign: 'left', border: tblBorder };
   const tdStyle: React.CSSProperties = { padding: '6px 10px', fontSize: 11, border: tblBorder, color: '#111' };
   const tdAmt: React.CSSProperties  = { ...tdStyle, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
-  // Employee-info cells: keep every label and value on a single line (no mid-word breaks).
-  const infoLabel: React.CSSProperties = { padding: '4px 6px', color: '#555', whiteSpace: 'nowrap' };
-  const infoValue: React.CSSProperties = { padding: '4px 6px', fontWeight: 500, whiteSpace: 'nowrap' };
+  // Employee-info cells: on screen keep every label and value on a single line
+  // (no mid-word breaks). The PDF page has a fixed A4 width, so there long
+  // values wrap inside their column instead of running off the page.
+  const infoLabel: React.CSSProperties = isPdf
+    ? { padding: '4px 6px', color: '#555', verticalAlign: 'top' }
+    : { padding: '4px 6px', color: '#555', whiteSpace: 'nowrap' };
+  const infoValue: React.CSSProperties = isPdf
+    ? { padding: '4px 6px', fontWeight: 500, verticalAlign: 'top', overflowWrap: 'anywhere' }
+    : { padding: '4px 6px', fontWeight: 500, whiteSpace: 'nowrap' };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', fontSize: 12, width: '100%', maxWidth: 750, margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', fontSize: 12, width: '100%', maxWidth: isPdf ? 'none' : 750, margin: '0 auto' }}>
       {/* Letterhead — logo pinned left, company name + address centered across the full width */}
       <div style={{ position: 'relative', borderBottom: '3px solid #1a1a2e', paddingBottom: 10, marginBottom: 14 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -66,7 +86,7 @@ function PayslipDoc({ emp, form, gross, totalDed, net, printDate }: PayslipDocPr
       </div>
 
       {/* Employee info grid */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 11 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 11, tableLayout: isPdf ? 'fixed' : undefined }}>
         <colgroup>
           <col style={{ width: '14%' }} />
           <col style={{ width: '19%' }} />
@@ -203,6 +223,29 @@ const BLANK_FORM: SlipForm = {
   pfDeduction: 1800, professionalTax: 200, otherDeductions: 0,
 };
 
+function slipToForm(slip: PaySlip, emp: Employee): SlipForm {
+  return {
+    employeeId:      emp._id,
+    month:           slip.month,
+    workingDays:     slip.workingDays,
+    basicSalary:     slip.basicSalary,
+    hra:             slip.hra,
+    specialAllowance:slip.specialAllowance,
+    bonus:           slip.bonus,
+    pfDeduction:     slip.pfDeduction,
+    professionalTax: slip.professionalTax,
+    otherDeductions: slip.otherDeductions,
+  };
+}
+
+/** One PDF export: exactly the employee + figures to render, independent of the edit form. */
+interface PdfJob {
+  emp: Employee;
+  form: SlipForm;
+  /** Payslip record to mark as downloaded afterwards, if any. */
+  slipId: string | null;
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
   padding: '7px 10px', fontSize: 13, color: 'var(--fg)', background: 'var(--bg-2)',
@@ -237,11 +280,10 @@ export default function PayslipsPage() {
   const [saveErr, setSaveErr]       = useState('');
   const [previewEmp, setPreviewEmp] = useState<Employee | null>(null);
   const [editingId, setEditingId]   = useState<string | null>(null);
-  const pendingDownload             = useRef(false);
+  const [pdfJob, setPdfJob]         = useState<PdfJob | null>(null);
+  const runningJob                  = useRef<PdfJob | null>(null);
 
-  const gross    = form.basicSalary + form.hra + form.specialAllowance + form.bonus;
-  const totalDed = form.pfDeduction + form.professionalTax + form.otherDeductions;
-  const net      = gross - totalDed;
+  const { gross, totalDed, net } = slipTotals(form);
 
   const today = new Date();
   const printDate = `${String(today.getDate()).padStart(2,'0')}-${String(today.getMonth()+1).padStart(2,'0')}-${today.getFullYear()}`;
@@ -265,14 +307,35 @@ export default function PayslipsPage() {
   useEffect(() => { loadEmps(); }, [loadEmps]);
   useEffect(() => { loadSlips(); }, [loadSlips]);
 
-  // Trigger PDF download after state settles (used by history row download)
+  // Generate the PDF once the off-screen A4 node for the requested job is in the DOM.
   useEffect(() => {
-    if (!pendingDownload.current || !previewEmp || !form.month) return;
-    pendingDownload.current = false;
-    const t = setTimeout(() => doDownloadPDF(), 200);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewEmp, form.month]);
+    if (!pdfJob || runningJob.current === pdfJob) return;
+    runningJob.current = pdfJob;
+    (async () => {
+      try {
+        const el = document.getElementById(PDF_SOURCE_ID);
+        if (!el) throw new Error('PDF render node missing');
+        const empCode = pdfJob.emp.employeeId || pdfJob.emp._id.slice(-6);
+        await downloadElementAsA4Pdf(el, {
+          sourceId: PDF_SOURCE_ID,
+          fileName: `STS-Payslip-${safeFileSegment(empCode)}-${safeFileSegment(pdfJob.form.month)}.pdf`,
+          title: `Salary Slip - ${pdfJob.emp.name} - ${monthLabel(pdfJob.form.month)}`,
+          author: COMPANY_NAME,
+        });
+        // Mark as downloaded
+        if (pdfJob.slipId) {
+          adminApi.updatePayslip(pdfJob.slipId, { status: 'downloaded' } as Partial<PaySlip>).catch(() => {});
+        }
+      } catch (err) {
+        console.error('[PDF download]', err);
+        setSaveErr('Could not generate the PDF. Please try again.');
+      } finally {
+        runningJob.current = null;
+        setPdfJob(null);
+        setDownloading(false);
+      }
+    })();
+  }, [pdfJob]);
 
   function set(k: keyof SlipForm, v: unknown) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -288,24 +351,17 @@ export default function PayslipsPage() {
     }
   }
 
-  function loadSlipIntoForm(slip: PaySlip) {
-    const emp = typeof slip.employeeId === 'object'
+  function slipEmployee(slip: PaySlip): Employee | null {
+    return typeof slip.employeeId === 'object'
       ? (slip.employeeId as Employee)
       : employees.find(e => e._id === slip.employeeId) ?? null;
+  }
+
+  function loadSlipIntoForm(slip: PaySlip) {
+    const emp = slipEmployee(slip);
     if (!emp) return;
     setPreviewEmp(emp);
-    setForm({
-      employeeId:      emp._id,
-      month:           slip.month,
-      workingDays:     slip.workingDays,
-      basicSalary:     slip.basicSalary,
-      hra:             slip.hra,
-      specialAllowance:slip.specialAllowance,
-      bonus:           slip.bonus,
-      pfDeduction:     slip.pfDeduction,
-      professionalTax: slip.professionalTax,
-      otherDeductions: slip.otherDeductions,
-    });
+    setForm(slipToForm(slip, emp));
   }
 
   function handleEdit(slip: PaySlip) {
@@ -321,9 +377,37 @@ export default function PayslipsPage() {
     setSaveMsg(''); setSaveErr('');
   }
 
-  function handleHistoryDownload(slip: PaySlip) {
-    loadSlipIntoForm(slip);
-    pendingDownload.current = true;
+  function requestPdf(job: PdfJob) {
+    if (pdfJob || downloading) return;
+    setSaveErr('');
+    setDownloading(true);
+    setPdfJob(job);
+  }
+
+  async function handleHistoryDownload(slip: PaySlip) {
+    if (pdfJob || downloading) return;
+    setSaveErr('');
+    setDownloading(true);
+    try {
+      // The history list embeds only name/ID/designation of the employee; load
+      // the full record so PAN, PF, UAN and bank details appear on the PDF.
+      const { data: full } = await adminApi.payslip(slip._id);
+      const emp = full.employeeId && typeof full.employeeId === 'object' ? (full.employeeId as Employee) : null;
+      if (!emp) throw new Error('The employee for this payslip could not be found.');
+      const slipForm = slipToForm(full, emp);
+      // Show the slip in the preview as before — unless another slip is being
+      // edited, whose unsaved changes must not be overwritten.
+      if (!editingId) { setPreviewEmp(emp); setForm(slipForm); }
+      setPdfJob({ emp, form: slipForm, slipId: editingId === slip._id ? slip._id : null });
+    } catch (err) {
+      setDownloading(false);
+      setSaveErr(err instanceof Error ? err.message : 'Could not load this payslip.');
+    }
+  }
+
+  function handleDownloadPDF() {
+    if (!previewEmp || !form.month) return;
+    requestPdf({ emp: previewEmp, form: { ...form }, slipId: editingId });
   }
 
   async function handleSave(e: FormEvent) {
@@ -357,51 +441,6 @@ export default function PayslipsPage() {
     window.print();
   }
 
-  async function doDownloadPDF() {
-    if (!previewEmp || !form.month) return;
-    setDownloading(true);
-    try {
-      const el = document.getElementById('payslip-screen-preview');
-      if (!el) return;
-
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF }   = await import('jspdf');
-
-      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/png');
-
-      const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW  = pageW;
-      const imgH  = (canvas.height * pageW) / canvas.width;
-
-      if (imgH <= pageH) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
-      } else {
-        let pos = 0;
-        let rem = imgH;
-        while (rem > 0) {
-          pdf.addImage(imgData, 'PNG', 0, pos, imgW, imgH);
-          rem -= pageH;
-          if (rem > 0) { pdf.addPage(); pos -= pageH; }
-        }
-      }
-
-      const empId = previewEmp.employeeId || previewEmp._id.slice(-6);
-      pdf.save(`STS-Payslip-${empId}-${form.month}.pdf`);
-
-      // Mark as downloaded
-      if (editingId) {
-        adminApi.updatePayslip(editingId, { status: 'downloaded' } as Partial<PaySlip>).catch(() => {});
-      }
-    } catch (err) {
-      console.error('[PDF download]', err);
-    } finally {
-      setDownloading(false);
-    }
-  }
-
   async function handleDeleteSlip(id: string) {
     if (!confirm('Delete this payslip record?')) return;
     try {
@@ -417,6 +456,20 @@ export default function PayslipsPage() {
     <>
       <style>{PRINT_CSS}</style>
       <div id="payslip-print-area" />
+
+      {/* Off-screen, fixed-width A4 layout used only for PDF export. Portalled to
+          <body> so no admin-layout overflow, transform or responsive table rule
+          can affect it; see lib/payslipPdf.ts. */}
+      {pdfJob && createPortal(
+        <div
+          id={PDF_SOURCE_ID}
+          aria-hidden="true"
+          style={{ position: 'fixed', left: -10000, top: 0, width: PDF_RENDER_WIDTH_PX, background: '#fff', pointerEvents: 'none' }}
+        >
+          <PayslipDoc variant="pdf" emp={pdfJob.emp} form={pdfJob.form} {...slipTotals(pdfJob.form)} printDate={printDate} />
+        </div>,
+        document.body
+      )}
 
       <div className="admin-split" style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
@@ -496,7 +549,7 @@ export default function PayslipsPage() {
               </div>
               <button
                 type="button"
-                onClick={doDownloadPDF}
+                onClick={handleDownloadPDF}
                 disabled={!canPreview || downloading}
                 style={{
                   ...btnPrimary,

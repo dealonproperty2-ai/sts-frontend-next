@@ -20,7 +20,7 @@ import React from 'react';
  * package) once, before react-pdf's module code runs.
  */
 let bufferReady: Promise<void> | null = null;
-function ensureBufferPolyfill(): Promise<void> {
+export function ensureBufferPolyfill(): Promise<void> {
   if (bufferReady) return bufferReady;
   bufferReady = (async () => {
     const g = globalThis as unknown as { Buffer?: unknown };
@@ -32,7 +32,7 @@ function ensureBufferPolyfill(): Promise<void> {
   return bufferReady;
 }
 
-function saveBlob(blob: Blob, filename: string) {
+export function saveBlob(blob: Blob, filename: string) {
   const href = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = href;
@@ -56,7 +56,7 @@ const safeName = (s: string) =>
  */
 const RENDER_TIMEOUT_MS = 30_000;
 
-function withRenderTimeout(work: Promise<Blob>): Promise<Blob> {
+export function withRenderTimeout(work: Promise<Blob>): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(
