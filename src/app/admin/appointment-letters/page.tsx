@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { adminApi, Employee, AppointmentLetter } from '@/lib/adminApi';
 import {
   COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE, COMPANY_EMAIL, COMPANY_WEBSITE,
-  SIGNATURE_BASE64, HR_NAME_DEFAULT, HR_TITLE_DEFAULT,
+  LOGO_MARK_BASE64, SIGNATURE_BASE64, HR_NAME_DEFAULT,
 } from '@/lib/hrConstants';
+import {
+  buildAppointmentLetter, localISODate, safeFileSegment,
+  type AppointmentLetterContent, type LetterRun, type Salutation,
+} from '@/lib/appointmentLetter';
+import { downloadAppointmentLetterPdf } from '@/lib/appointmentLetterPdf';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -33,141 +38,88 @@ const PRINT_CSS = `
 @media screen { #letter-print-area { display: none; } }
 `;
 
-// ── Appointment Letter Document ───────────────────────────────────────────────
-interface LetterDocProps {
-  emp: Employee;
-  form: LetterForm;
+// ── Appointment Letter Document (on-screen preview) ───────────────────────────
+// Renders the same content model as the downloaded PDF (lib/appointmentLetterPdfDoc.tsx),
+// laid out like the company's reference letter.
+function Runs({ runs }: { runs: LetterRun[] }) {
+  return (
+    <>
+      {runs.map((r, i) => {
+        let node: React.ReactNode = r.text;
+        if (r.sup) node = <sup>{node}</sup>;
+        if (r.underline) node = <u>{node}</u>;
+        if (r.bold) node = <strong>{node}</strong>;
+        return <span key={i}>{node}</span>;
+      })}
+    </>
+  );
 }
 
-function LetterDoc({ emp, form }: LetterDocProps) {
-  const paraStyle: React.CSSProperties = { marginBottom: 12, fontSize: 12, lineHeight: 1.6, color: '#111', textAlign: 'justify' };
-
-  const clauses: Array<{ title: string; content: string }> = [
-    {
-      title: 'Designation',
-      content: `You are being appointed as <strong>${form.designation || '—'}</strong>${form.department ? ` in the <strong>${form.department}</strong> department` : ''}.`,
-    },
-    {
-      title: 'Date of Joining',
-      content: `Your date of joining will be <strong>${fmtDate(form.joiningDate) || '—'}</strong>. Please ensure you report to the office on or before this date with all required documents.`,
-    },
-    {
-      title: 'Compensation',
-      content: `You will be entitled to a gross monthly salary of <strong>₹${fmtINR(form.salary)}/- (Rupees ${fmtINR(form.salary)} only)</strong>. A detailed salary break-up will be provided separately.`,
-    },
-    {
-      title: 'Work Location',
-      content: `Your primary place of work will be at <strong>${form.workLocation || COMPANY_ADDRESS}</strong>. The Company reserves the right to transfer you to any of its offices as per operational requirements.`,
-    },
-    {
-      title: 'Probation Period',
-      content: `You will be on probation for a period of <strong>${form.probationPeriod}</strong> from the date of joining. On successful completion, you will be confirmed in the service of the Company.`,
-    },
-    {
-      title: 'Working Hours',
-      content: `Your working hours will be as per Company policy, currently <strong>9:00 AM to 6:00 PM, Monday to Saturday</strong>. The Company may revise working hours from time to time.`,
-    },
-    {
-      title: 'Leave Entitlement',
-      content: `You will be entitled to leaves as per the Company&apos;s leave policy in force from time to time. Details will be shared at the time of joining.`,
-    },
-    {
-      title: 'Confidentiality &amp; Non-Disclosure',
-      content: `You will not, during or after the term of your employment, disclose any confidential information relating to the Company, its clients, employees, or operations without prior written consent.`,
-    },
-    {
-      title: 'Notice Period',
-      content: `Either party may terminate this employment by giving <strong>30 (Thirty) days</strong> written notice or payment in lieu thereof. During probation, either party may terminate by giving <strong>7 (Seven) days</strong> notice.`,
-    },
-    ...(form.customTerms
-      ? [{ title: 'Additional Terms', content: form.customTerms }]
-      : []),
-  ];
+function LetterDoc({ content: c }: { content: AppointmentLetterContent }) {
+  const para: React.CSSProperties = { marginTop: 14, textAlign: 'justify' };
+  const link: React.CSSProperties = { color: '#0563C1', textDecoration: 'underline' };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', fontSize: 12, width: '100%', maxWidth: 750, margin: '0 auto' }}>
+    <div style={{ fontFamily: '"Times New Roman", Times, serif', background: '#fff', color: '#000', fontSize: 15, lineHeight: 1.2, width: '100%', maxWidth: 750, margin: '0 auto' }}>
 
       {/* Letterhead */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '3px solid #1a1a2e', paddingBottom: 12, marginBottom: 18 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo3.png" alt="Step To Soft" height={48} style={{ objectFit: 'contain' }} />
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.02em' }}>{COMPANY_NAME}</div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{COMPANY_ADDRESS}</div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>
-            Ph: {COMPANY_PHONE} &nbsp;|&nbsp; {COMPANY_EMAIL} &nbsp;|&nbsp; {COMPANY_WEBSITE}
-          </div>
-        </div>
-      </div>
-
-      {/* Date & Ref */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: '#333' }}>Date: <strong>{fmtDate(form.offerDate || todayISO())}</strong></div>
-        <div style={{ fontSize: 11, color: '#333', marginTop: 3 }}>
-          Ref: STS/HR/APT/{new Date(form.offerDate || todayISO()).getFullYear()}/{emp.employeeId || '—'}
-        </div>
-      </div>
-
-      {/* Addressee */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 12 }}>{emp.name}</div>
-        {emp.fatherName && <div style={{ fontSize: 11, color: '#444' }}>S/o D/o {emp.fatherName}</div>}
-        {emp.address && <div style={{ fontSize: 11, color: '#444', whiteSpace: 'pre-line' }}>{emp.address}</div>}
-      </div>
-
-      {/* Subject */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, textDecoration: 'underline', color: '#1a1a2e' }}>
-          Subject: Appointment Letter
-        </div>
-      </div>
-
-      {/* Salutation */}
-      <div style={{ ...paraStyle, marginBottom: 10 }}>Dear {emp.name},</div>
-
-      {/* Opening */}
-      <div style={paraStyle}>
-        We are pleased to appoint you as <strong>{form.designation || '—'}</strong>
-        {form.department ? ` in the ${form.department} Department` : ''} at <strong>{COMPANY_NAME}</strong>,
-        effective <strong>{fmtDate(form.joiningDate) || '—'}</strong>.
-        This appointment is subject to the following terms and conditions:
-      </div>
-
-      {/* Numbered Clauses */}
-      <ol style={{ paddingLeft: 20, margin: 0 }}>
-        {clauses.map((c, i) => (
-          <li key={i} style={{ marginBottom: 10, fontSize: 12, lineHeight: 1.6, color: '#111' }}>
-            <strong>{c.title}: </strong>
-            <span dangerouslySetInnerHTML={{ __html: c.content }} />
-          </li>
-        ))}
-      </ol>
-
-      {/* Closing */}
-      <div style={{ ...paraStyle, marginTop: 16 }}>
-        We welcome you to the <strong>{COMPANY_NAME}</strong> family and look forward to a long and fruitful association.
-        Please sign and return the duplicate copy of this letter as a token of your acceptance.
-      </div>
-
-      {/* Signature Block */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 28 }}>
-        <div>
-          <div style={{ fontSize: 12, color: '#333', marginBottom: 4 }}>Yours sincerely,</div>
-          <div style={{ fontSize: 11, color: '#555' }}>For {COMPANY_NAME}</div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SIGNATURE_BASE64} alt="Signature" height={50} style={{ objectFit: 'contain', margin: '6px 0', display: 'block' }} />
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{form.hrName || HR_NAME_DEFAULT}</div>
-          <div style={{ fontSize: 11, color: '#555' }}>{HR_TITLE_DEFAULT}</div>
+          <img src={LOGO_MARK_BASE64} alt="" style={{ height: 60, width: 'auto', display: 'block' }} />
+          <span style={{ fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 700, fontSize: 22, color: '#404040', letterSpacing: '0.02em', marginTop: 6 }}>TEP TO SOFT</span>
         </div>
-        <div style={{ textAlign: 'center', borderTop: '1px solid #aaa', paddingTop: 8, width: 200 }}>
-          <div style={{ fontSize: 11, color: '#555' }}>Candidate Signature</div>
-          <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>{emp.name}</div>
-          <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>Date: _______________</div>
+        <div style={{ textAlign: 'right' }}>
+          <div>{COMPANY_PHONE}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style={link}>{COMPANY_EMAIL}</span></div>
+          <div style={link}>{COMPANY_WEBSITE}</div>
         </div>
+      </div>
+
+      {/* Date and recipient */}
+      <div style={{ marginTop: 36, fontSize: 14 }}>
+        <div>Date: {c.issueDate}</div>
+        <div>{c.recipient.name}</div>
+        {c.recipient.addressLines.map((line, i) => <div key={i}>{line}</div>)}
+        {c.recipient.email && <div>Email:{c.recipient.email}</div>}
+        {c.recipient.phone && <div>Cell: {c.recipient.phone}</div>}
+      </div>
+
+      <div style={{ marginTop: 40, textAlign: 'center', fontWeight: 700, textDecoration: 'underline' }}>{c.title}</div>
+      <div style={{ marginTop: 10 }}>{c.salutation}</div>
+      <div style={para}><Runs runs={c.opening} /></div>
+
+      {/* Numbered clauses */}
+      {c.clauses.map((cl, i) => (
+        <div key={i} style={{ marginTop: 14 }}>
+          <div><Runs runs={cl.heading} /></div>
+          {cl.paragraphs.map((p, j) => (
+            <div key={j} style={{ textAlign: 'justify', whiteSpace: 'pre-line', marginTop: j > 0 || cl.gapAfterHeading ? 14 : 0 }}><Runs runs={p} /></div>
+          ))}
+        </div>
+      ))}
+
+      {/* Closing and HR signatory */}
+      <div style={{ marginTop: 8 }}>{c.thanking}</div>
+      <div style={{ marginTop: 14 }}>
+        <div>{c.signOff}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={SIGNATURE_BASE64} alt="HR signature" style={{ height: 40, width: 'auto', display: 'block', margin: '6px 0 3px' }} />
+        <div>({c.signatory.name})</div>
+        <div style={{ marginLeft: 55 }}>{c.signatory.designation}</div>
+      </div>
+
+      {/* Employee acceptance */}
+      <div style={{ marginTop: 26, textAlign: 'justify' }}><Runs runs={c.acceptance} /></div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 44 }}>
+        <div style={{ width: 170, borderTop: '1px solid #000', paddingTop: 4, textAlign: 'center' }}>Signature</div>
+      </div>
+      <div style={{ marginTop: 18 }}>
+        <div>Date: {c.acceptanceDate || '____________________'}</div>
+        <div>Place: {c.acceptancePlace || '___________________'}</div>
       </div>
 
       {/* Footer */}
-      <div style={{ textAlign: 'center', color: '#888', fontSize: 10, borderTop: '1px solid #ddd', marginTop: 20, paddingTop: 8 }}>
+      <div style={{ marginTop: 28, borderTop: '1px solid #bbb', paddingTop: 6, fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 10, color: '#6b6b6b' }}>
         {COMPANY_NAME} &nbsp;·&nbsp; {COMPANY_ADDRESS}
       </div>
     </div>
@@ -177,6 +129,10 @@ function LetterDoc({ emp, form }: LetterDocProps) {
 // ── Form state ────────────────────────────────────────────────────────────────
 interface LetterForm {
   employeeId: string;
+  /** Letter issue date for the "Date:" line — the record's creation date, or today for a new letter (not editable). */
+  issueDate: string;
+  salutation: Salutation;
+  interviewDate: string;
   offerDate: string;
   joiningDate: string;
   designation: string;
@@ -186,10 +142,16 @@ interface LetterForm {
   probationPeriod: string;
   hrName: string;
   customTerms: string;
+  /** Employee acceptance section (YYYY-MM-DD) — not the joining or issue date. */
+  acceptanceDate: string;
+  acceptancePlace: string;
 }
 
 const BLANK_FORM: LetterForm = {
   employeeId: '',
+  issueDate: localISODate(),
+  salutation: '',
+  interviewDate: '',
   offerDate: todayISO(),
   joiningDate: '',
   designation: '',
@@ -199,7 +161,29 @@ const BLANK_FORM: LetterForm = {
   probationPeriod: '3 (Three) months',
   hrName: HR_NAME_DEFAULT,
   customTerms: '',
+  acceptanceDate: '',
+  acceptancePlace: '',
 };
+
+function letterToForm(lt: AppointmentLetter, emp: Employee): LetterForm {
+  return {
+    employeeId:     emp._id,
+    issueDate:      lt.createdAt ? lt.createdAt.slice(0, 10) : localISODate(),
+    salutation:     lt.salutation ?? '',
+    interviewDate:  lt.interviewDate ? lt.interviewDate.slice(0, 10) : '',
+    offerDate:      lt.offerDate ? lt.offerDate.slice(0, 10) : todayISO(),
+    joiningDate:    lt.joiningDate ? lt.joiningDate.slice(0, 10) : '',
+    designation:    lt.designation,
+    department:     lt.department,
+    salary:         lt.salary,
+    workLocation:   lt.workLocation,
+    probationPeriod:lt.probationPeriod,
+    hrName:         lt.hrName,
+    customTerms:    lt.customTerms,
+    acceptanceDate: lt.acceptanceDate ? lt.acceptanceDate.slice(0, 10) : '',
+    acceptancePlace:lt.acceptancePlace ?? '',
+  };
+}
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
@@ -235,7 +219,6 @@ export default function AppointmentLettersPage() {
   const [saveErr, setSaveErr]         = useState('');
   const [previewEmp, setPreviewEmp]   = useState<Employee | null>(null);
   const [editingId, setEditingId]     = useState<string | null>(null);
-  const pendingDownload               = useRef(false);
 
   const loadEmps = useCallback(async () => {
     try {
@@ -256,21 +239,14 @@ export default function AppointmentLettersPage() {
   useEffect(() => { loadEmps(); }, [loadEmps]);
   useEffect(() => { loadLetters(); }, [loadLetters]);
 
-  // Trigger PDF download after state settles (used by history row download)
-  useEffect(() => {
-    if (!pendingDownload.current || !previewEmp || !form.joiningDate) return;
-    pendingDownload.current = false;
-    const t = setTimeout(() => doDownloadPDF(), 200);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewEmp, form.joiningDate]);
-
   function set<K extends keyof LetterForm>(k: K, v: LetterForm[K]) {
     setForm(f => ({ ...f, [k]: v }));
   }
 
   function handleEmpChange(id: string) {
     set('employeeId', id);
+    // Acceptance date/place belong to one employee's letter — never carry them over.
+    setForm(f => ({ ...f, acceptanceDate: '', acceptancePlace: '' }));
     const emp = employees.find(e => e._id === id);
     if (emp) {
       setPreviewEmp(emp);
@@ -279,6 +255,9 @@ export default function AppointmentLettersPage() {
       if (emp.workLocation) set('workLocation', emp.workLocation);
       const total = (emp.basicSalary || 0) + (emp.hra || 0) + (emp.specialAllowance || 0);
       if (total > 0) set('salary', total);
+      // Take the joining date from this employee's record; with none on file,
+      // clear it so the previous employee's date can never carry over.
+      set('joiningDate', emp.joiningDate ? emp.joiningDate.slice(0, 10) : '');
     }
   }
 
@@ -288,18 +267,7 @@ export default function AppointmentLettersPage() {
       : employees.find(e => e._id === lt.employeeId) ?? null;
     if (!emp) return;
     setPreviewEmp(emp);
-    setForm({
-      employeeId:     emp._id,
-      offerDate:      lt.offerDate ? lt.offerDate.slice(0, 10) : todayISO(),
-      joiningDate:    lt.joiningDate ? lt.joiningDate.slice(0, 10) : '',
-      designation:    lt.designation,
-      department:     lt.department,
-      salary:         lt.salary,
-      workLocation:   lt.workLocation,
-      probationPeriod:lt.probationPeriod,
-      hrName:         lt.hrName,
-      customTerms:    lt.customTerms,
-    });
+    setForm(letterToForm(lt, emp));
   }
 
   function handleEdit(lt: AppointmentLetter) {
@@ -315,9 +283,26 @@ export default function AppointmentLettersPage() {
     setSaveMsg(''); setSaveErr('');
   }
 
-  function handleHistoryDownload(lt: AppointmentLetter) {
-    loadLetterIntoForm(lt);
-    pendingDownload.current = true;
+  async function handleHistoryDownload(lt: AppointmentLetter) {
+    if (downloading) return;
+    setSaveErr(''); setSaveMsg('');
+    setDownloading(true);
+    try {
+      // The history list embeds only part of the employee record (no phone);
+      // load the full saved letter so the PDF carries complete contact details.
+      const { data: full } = await adminApi.appointmentLetter(lt._id);
+      const emp = full.employeeId && typeof full.employeeId === 'object' ? (full.employeeId as Employee) : null;
+      if (!emp) throw new Error('The employee for this letter could not be found.');
+      const letterForm = letterToForm(full, emp);
+      // Show the letter in the preview as before — unless another letter is
+      // being edited, whose unsaved changes must not be overwritten.
+      if (!editingId) { setPreviewEmp(emp); setForm(letterForm); }
+      await generatePdf(emp, letterForm, editingId === lt._id ? lt._id : null);
+    } catch (err) {
+      setSaveErr(err instanceof Error ? err.message : 'Could not load this letter.');
+    } finally {
+      setDownloading(false);
+    }
   }
 
   async function handleSave(e: FormEvent) {
@@ -352,46 +337,35 @@ export default function AppointmentLettersPage() {
     window.print();
   }
 
-  async function doDownloadPDF() {
-    if (!previewEmp) return;
+  /**
+   * Builds the letter from explicit data and downloads it as a text-based A4
+   * PDF. Refuses (with a message) when required data is missing instead of
+   * printing placeholders.
+   */
+  async function generatePdf(emp: Employee, letterForm: LetterForm, letterId: string | null) {
+    const content = buildAppointmentLetter(emp, letterForm);
+    if (content.missing.required.length) {
+      throw new Error(`The letter needs the following before it can be downloaded: ${content.missing.required.join(', ')}.`);
+    }
+    const empCode = emp.employeeId || emp._id.slice(-6);
+    await downloadAppointmentLetterPdf(
+      content,
+      `STS-AppointmentLetter-${safeFileSegment(empCode)}-${safeFileSegment(letterForm.joiningDate)}.pdf`,
+    );
+    // Mark as downloaded
+    if (letterId) {
+      adminApi.updateAppointmentLetter(letterId, { status: 'downloaded' } as Partial<AppointmentLetter>).catch(() => {});
+    }
+  }
+
+  async function handleDownloadPDF() {
+    if (!previewEmp || downloading) return;
+    setSaveErr(''); setSaveMsg('');
     setDownloading(true);
     try {
-      const el = document.getElementById('letter-screen-preview');
-      if (!el) return;
-
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF }   = await import('jspdf');
-
-      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/png');
-
-      const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW  = pageW;
-      const imgH  = (canvas.height * pageW) / canvas.width;
-
-      if (imgH <= pageH) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
-      } else {
-        let pos = 0;
-        let rem = imgH;
-        while (rem > 0) {
-          pdf.addImage(imgData, 'PNG', 0, pos, imgW, imgH);
-          rem -= pageH;
-          if (rem > 0) { pdf.addPage(); pos -= pageH; }
-        }
-      }
-
-      const empId = previewEmp.employeeId || previewEmp._id.slice(-6);
-      pdf.save(`STS-AppointmentLetter-${empId}-${form.joiningDate || form.offerDate}.pdf`);
-
-      // Mark as downloaded
-      if (editingId) {
-        adminApi.updateAppointmentLetter(editingId, { status: 'downloaded' } as Partial<AppointmentLetter>).catch(() => {});
-      }
+      await generatePdf(previewEmp, { ...form }, editingId);
     } catch (err) {
-      console.error('[PDF download]', err);
+      setSaveErr(err instanceof Error ? err.message : 'Could not generate the PDF.');
     } finally {
       setDownloading(false);
     }
@@ -416,6 +390,7 @@ export default function AppointmentLettersPage() {
   }
 
   const canPreview = Boolean(previewEmp);
+  const content = previewEmp ? buildAppointmentLetter(previewEmp, form) : null;
 
   return (
     <>
@@ -449,7 +424,23 @@ export default function AppointmentLettersPage() {
 
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Offer Date *</label>
+                <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Salutation *</label>
+                <select style={inp} value={form.salutation} onChange={e => set('salutation', e.target.value as Salutation)}>
+                  <option value="">— Select —</option>
+                  <option value="Mr.">Mr.</option>
+                  <option value="Ms.">Ms.</option>
+                  <option value="Mrs.">Mrs.</option>
+                </select>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Interview Date *</label>
+                <input type="date" style={inp} value={form.interviewDate} onChange={e => set('interviewDate', e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Offer Letter Date *</label>
                 <input type="date" style={inp} value={form.offerDate} onChange={e => set('offerDate', e.target.value)} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -477,6 +468,9 @@ export default function AppointmentLettersPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Monthly Gross Salary (₹)</label>
               <input type="number" style={inp} min={0} value={form.salary} onChange={e => set('salary', Number(e.target.value))} />
+              {form.salary > 0 && (
+                <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>Letter states annual compensation: Rs. {fmtINR(form.salary * 12)}/-</span>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -502,6 +496,30 @@ export default function AppointmentLettersPage() {
               <textarea style={{ ...inp, resize: 'vertical', minHeight: 64 }} value={form.customTerms} onChange={e => set('customTerms', e.target.value)} placeholder="Any special conditions…" />
             </div>
 
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Employee Acceptance Details</div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label htmlFor="al-acceptance-date" style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Acceptance Date</label>
+                <input id="al-acceptance-date" type="date" style={inp} value={form.acceptanceDate} onChange={e => set('acceptanceDate', e.target.value)} />
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label htmlFor="al-acceptance-place" style={{ fontSize: 11, fontWeight: 500, color: 'var(--fg-3)' }}>Place</label>
+                <input id="al-acceptance-place" type="text" style={inp} maxLength={100} value={form.acceptancePlace} onChange={e => set('acceptancePlace', e.target.value)} onBlur={e => set('acceptancePlace', e.target.value.replace(/\s+/g, ' ').trim())} placeholder="Enter city name" />
+              </div>
+            </div>
+
+            {content && content.missing.required.length > 0 && (
+              <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#991b1b' }}>
+                Still needed for the letter: {content.missing.required.join(', ')}.
+                {content.missing.required.some(r => r.startsWith("employee's")) && ' Employee details are edited on the Employees page.'}
+              </div>
+            )}
+            {content && content.missing.optional.length > 0 && (
+              <div style={{ padding: '8px 12px', background: '#fef9c3', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#854d0e' }}>
+                Not on this employee&apos;s record, so omitted from the letter: {content.missing.optional.join(', ')}.
+              </div>
+            )}
             {saveErr && <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#991b1b' }}>{saveErr}</div>}
             {saveMsg && <div style={{ padding: '8px 12px', background: '#dcfce7', borderRadius: 'var(--r-sm)', fontSize: 12, color: '#166534' }}>{saveMsg}</div>}
 
@@ -517,7 +535,7 @@ export default function AppointmentLettersPage() {
               </div>
               <button
                 type="button"
-                onClick={doDownloadPDF}
+                onClick={handleDownloadPDF}
                 disabled={!canPreview || downloading}
                 style={{
                   ...btnPrimary,
@@ -543,7 +561,7 @@ export default function AppointmentLettersPage() {
                 id="letter-screen-preview"
                 style={{ background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.18)', borderRadius: 4, padding: '24px 28px', maxWidth: 760, margin: '0 auto' }}
               >
-                <LetterDoc emp={previewEmp} form={form} />
+                {content && <LetterDoc content={content} />}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--fg-4)', fontSize: 13 }}>

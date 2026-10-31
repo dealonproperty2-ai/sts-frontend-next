@@ -108,20 +108,6 @@ export async function sendApplicationMails(p: {
   return { sent: true as const };
 }
 
-// ─── OTP ────────────────────────────────────────────────────────────────────
-
-export async function sendOtpMail(email: string, otp: string) {
-  const t = getTransporter();
-  if (!t) return { sent: false, reason: 'smtp-not-configured' as const };
-  const html = wrap('Your verification code', `
-    <p style="font-size:14px;color:#374151">Enter this code to continue. It expires in 10 minutes.</p>
-    <div class="code">${escapeHtml(otp)}</div>
-    <p style="font-size:12px;color:#9ca3af">If you didn't request this, you can safely ignore it.</p>
-  `);
-  await t.sendMail({ from: from(), to: email, subject: 'Your Step To Soft OTP', html });
-  return { sent: true as const };
-}
-
 // ─── Password Reset ─────────────────────────────────────────────────────────
 
 export async function sendPasswordResetMail(email: string, resetUrl: string) {

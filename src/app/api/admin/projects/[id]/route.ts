@@ -13,8 +13,9 @@ function badId() {
   return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function GET(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   if (!mongoose.Types.ObjectId.isValid(params.id)) return badId();
 
@@ -29,8 +30,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function PATCH(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   if (!mongoose.Types.ObjectId.isValid(params.id)) return badId();
 
@@ -92,8 +94,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function DELETE(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   if (!mongoose.Types.ObjectId.isValid(params.id)) return badId();
 

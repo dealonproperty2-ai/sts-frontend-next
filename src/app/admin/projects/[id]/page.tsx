@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi, AdminProject } from '@/lib/adminApi';
 
@@ -11,9 +11,9 @@ function fmt(iso: string) {
   });
 }
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage() {
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<AdminProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

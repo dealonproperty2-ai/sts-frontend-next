@@ -43,12 +43,18 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
 
   images: {
-    formats: ['image/avif', 'image/webp'],
+    // AVIF temporarily disabled: AVIF optimization was the vector for an
+    // unauthenticated RCE (GHSA-2xp9-vwfh-vxw4). Re-enable only once the
+    // patched release has been in production for a while.
+    formats: ['image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 31536000,
+    // No S3 bucket is used by next/image (all sources are local /public files
+    // or blob: previews), so the former '**.amazonaws.com' wildcard — which let
+    // the optimizer fetch from ANY bucket, attacker-owned included — is gone.
+    // If a bucket is added later, list its exact hostname and a pathname.
     remotePatterns: [
-      { protocol: 'https', hostname: '**.amazonaws.com' },
       { protocol: 'https', hostname: 'steptosoft.com' },
     ],
   },

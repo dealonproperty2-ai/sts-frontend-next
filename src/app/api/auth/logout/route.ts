@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   try { body = await req.json(); } catch { /* optional body */ }
 
   // Optionally verify the admin token to log the logout
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
 
   try {
     await connectDb();

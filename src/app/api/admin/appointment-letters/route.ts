@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { connectDb } from '@/server/db';
 import { verifyAdmin } from '@/server/adminAuth';
-import AppointmentLetter from '@/server/models/AppointmentLetter';
+import AppointmentLetter, { toCleanText, toOptionalDate, toSalutation } from '@/server/models/AppointmentLetter';
 import { audit } from '@/server/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     const letter = await AppointmentLetter.create({
       employeeId:     body.employeeId,
       offerDate:      new Date(body.offerDate),
+      interviewDate:  toOptionalDate(body.interviewDate),
       joiningDate:    new Date(body.joiningDate),
       designation:    body.designation?.trim(),
       department:     body.department?.trim() ?? '',
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
       workLocation:   body.workLocation?.trim() ?? '',
       probationPeriod:body.probationPeriod?.trim() ?? '3 (Three) months',
       hrName:         body.hrName?.trim() ?? 'Naheed Zakia',
+      salutation:     toSalutation(body.salutation),
+      acceptanceDate: toOptionalDate(body.acceptanceDate),
+      acceptancePlace:toCleanText(body.acceptancePlace),
       customTerms:    body.customTerms?.trim() ?? '',
     });
 

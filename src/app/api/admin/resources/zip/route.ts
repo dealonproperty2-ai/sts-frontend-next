@@ -14,7 +14,7 @@ const safe = (s: string) => (s || 'resource').replace(/[^a-z0-9]+/gi, '-').repla
 
 // Bundles the uploaded resume files for the selected resources into one ZIP.
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: { ids?: unknown };

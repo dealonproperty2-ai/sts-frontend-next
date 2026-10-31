@@ -18,7 +18,7 @@ const IMAGE_TYPES: Record<string, string> = {
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let formData: FormData;

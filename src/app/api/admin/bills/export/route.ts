@@ -12,7 +12,7 @@ function csvEscape(v: unknown): string {
 }
 
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);

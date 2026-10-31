@@ -54,7 +54,11 @@ const NAV = [
   { href: '/admin/bills',               label: 'Office Bills',        icon: '◑', group: '' },
   { href: '/admin/employees',            label: 'Employees',           icon: '◍', group: 'HR' },
   { href: '/admin/payslips',            label: 'Payslips',            icon: '◰', group: 'HR' },
+  { href: '/admin/offer-letters',       label: 'Offer Letters',       icon: '◲', group: 'HR' },
   { href: '/admin/appointment-letters', label: 'Appt. Letters',       icon: '◱', group: 'HR' },
+  { href: '/admin/internship-letters',  label: 'Internship Letters',  icon: '◳', group: 'HR' },
+  { href: '/admin/relieving-letters',   label: 'Relieving Letters',   icon: '◪', group: 'HR' },
+  { href: '/admin/experience-letters',  label: 'Experience Letters',  icon: '◩', group: 'HR' },
   { href: '/admin/audit-logs',           label: 'Audit Logs',          icon: '◐', group: '' },
   { href: '/admin/settings',            label: 'Settings',            icon: '◫', group: '' },
 ];

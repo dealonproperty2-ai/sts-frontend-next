@@ -7,8 +7,9 @@ import { audit } from '@/server/audit';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function GET(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   await connectDb();
   const emp = await Employee.findById(params.id).lean();
@@ -16,8 +17,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json({ data: emp });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function PATCH(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {
@@ -60,8 +62,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function DELETE(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   await connectDb();

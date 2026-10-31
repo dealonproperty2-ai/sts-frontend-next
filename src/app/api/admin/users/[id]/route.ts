@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectDb } from '@/server/db';
-import { verifyAdmin } from '@/server/adminAuth';
+import { revokeUserSessions, verifyAdmin } from '@/server/adminAuth';
 import User from '@/server/models/User';
+import RefreshToken from '@/server/models/RefreshToken';
 import { audit } from '@/server/audit';
 import { clean, isNonEmptyString } from '@/server/validation';
 
@@ -16,8 +17,9 @@ function badId() {
   return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function PATCH(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   if (!mongoose.Types.ObjectId.isValid(params.id)) return badId();
 
@@ -73,6 +75,10 @@ async function handlePatch(
     await connectDb();
     const doc = await User.findByIdAndUpdate(id, { $set: update }, { new: true, lean: true }).select('-password');
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Disabling, demoting or resetting the password ends every existing session
+    if (update.isActive === false || (update.role !== undefined && update.role !== 'admin') || update.password !== undefined) {
+      await revokeUserSessions(id);
+    }
     audit({ adminId: actor.id, adminEmail: actor.email ?? '', action: 'UPDATE', resource: 'user', resourceId: id, details: Object.keys(update), ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() });
     return NextResponse.json({ success: true, data: doc });
   } catch (err) {
@@ -81,8 +87,9 @@ async function handlePatch(
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = verifyAdmin(req);
+export async function DELETE(req: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
   if (!mongoose.Types.ObjectId.isValid(params.id)) return badId();
 
@@ -94,6 +101,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     await connectDb();
     const doc = await User.findByIdAndDelete(params.id);
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    await RefreshToken.deleteMany({ userId: params.id });
     audit({ adminId: auth.payload.id, adminEmail: auth.payload.email ?? '', action: 'DELETE', resource: 'user', resourceId: params.id, ip: (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() });
     return NextResponse.json({ success: true });
   } catch (err) {

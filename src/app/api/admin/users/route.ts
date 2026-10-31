@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 const VALID_ROLES = ['user', 'admin'];
 
 export async function GET(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: Record<string, unknown>;

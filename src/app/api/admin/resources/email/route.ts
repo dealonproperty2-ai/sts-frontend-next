@@ -18,7 +18,7 @@ const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g,
 // Sends the selected candidate profiles (resume attachments + a summary table)
 // to a client email address.
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: { ids?: unknown; to?: unknown; subject?: unknown; message?: unknown };

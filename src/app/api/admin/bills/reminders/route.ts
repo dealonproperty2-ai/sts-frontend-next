@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 // POST: send email reminders for pending bills due within 7 days
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   try {

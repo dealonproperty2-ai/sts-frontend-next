@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
-import jwt from 'jsonwebtoken';
 import { connectDb } from '@/server/db';
+import { signAccessToken } from '@/server/adminAuth';
 import RefreshToken from '@/server/models/RefreshToken';
 import User from '@/server/models/User';
 
@@ -26,10 +26,11 @@ export async function POST(req: Request) {
 
   try {
     await connectDb();
-    const stored = await RefreshToken.findOne({ token: refreshToken });
+    // Consume atomically so a refresh token can be used at most once, even
+    // under concurrent requests.
+    const stored = await RefreshToken.findOneAndDelete({ token: refreshToken });
 
     if (!stored || stored.expiresAt < new Date()) {
-      if (stored) await stored.deleteOne();
       return NextResponse.json({ error: 'Invalid or expired refresh token' }, { status: 401 });
     }
 
@@ -39,12 +40,10 @@ export async function POST(req: Request) {
 
     const user = await User.findById(stored.userId);
     if (!user || !user.isActive) {
-      await stored.deleteOne();
       return NextResponse.json({ error: 'Account not found or disabled' }, { status: 401 });
     }
 
     // Rotate refresh token
-    await stored.deleteOne();
     const newRaw = randomBytes(48).toString('hex');
     await RefreshToken.create({
       userId: user._id,
@@ -54,11 +53,7 @@ export async function POST(req: Request) {
       userAgent: req.headers.get('user-agent') || '',
     });
 
-    const accessToken = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role },
-      secret,
-      { expiresIn: '8h' }
-    );
+    const accessToken = signAccessToken(user, secret);
 
     return NextResponse.json({ success: true, token: accessToken, refreshToken: newRaw });
   } catch (err) {

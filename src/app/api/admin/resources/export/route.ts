@@ -33,7 +33,7 @@ function csvCell(v: string) {
 }
 
 export async function POST(req: Request) {
-  const auth = verifyAdmin(req);
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   let body: { ids?: unknown; format?: unknown };

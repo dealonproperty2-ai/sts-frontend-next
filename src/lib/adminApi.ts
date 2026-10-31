@@ -245,10 +245,149 @@ export interface PaySlip {
   updatedAt: string;
 }
 
+export interface OfferLetter {
+  _id: string;
+  offerNumber: string;
+  employeeId: string | null;
+  employeeCode: string;
+  salutation: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  candidateName: string;
+  candidateEmail: string;
+  candidatePhone: string;
+  candidateAddress: string;
+  department: string;
+  designation: string;
+  employmentType: string;
+  workLocation: string;
+  reportingManager: string;
+  joiningDate: string;
+  issueDate: string;
+  validUntil: string;
+  monthlyGross: number;
+  basicSalary: number;
+  hra: number;
+  specialAllowance: number;
+  annualCtc: number | null;
+  benefits: string;
+  incentives: string;
+  probationPeriod: string;
+  workingHours: string;
+  additionalTerms: string;
+  hrName: string;
+  /** Optional — missing on offers created before the acceptance fields existed. */
+  acceptanceDate?: string | null;
+  acceptancePlace?: string;
+  status: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired' | 'revoked';
+  statusHistory: Array<{ status: string; at: string; by: string }>;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InternshipLetter {
+  _id: string;
+  employeeId: string | null;
+  employeeCode: string;
+  salutation: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  internName: string;
+  relation: '' | 'S/o' | 'D/o' | 'W/o' | 'C/o';
+  guardianSalutation: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  guardianName: string;
+  pronoun: 'he' | 'she' | 'they';
+  internshipType: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  letterDate: string;
+  dateStyle: 'month' | 'day';
+  workSummary: string;
+  technologies: string;
+  performance: string;
+  remarks: string;
+  introText: string;
+  workText: string;
+  performanceText: string;
+  closingText: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  signatorySubtitle: string;
+  logoMode: 'default' | 'custom' | 'none';
+  /** Omitted in list responses. */
+  logoData?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RelievingLetter {
+  _id: string;
+  employeeId: string | null;
+  employeeCode: string;
+  showEmployeeCode: boolean;
+  salutation: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  employeeName: string;
+  pronoun: 'he' | 'she' | 'they';
+  designation: string;
+  department: string;
+  joiningDate: string;
+  relievingDate: string;
+  issueDate: string;
+  remarks: string;
+  greetingText: string;
+  introText: string;
+  closingText: string;
+  signatoryName: string;
+  signatoryCompany: string;
+  signatoryDepartment: string;
+  signatoryTitle: string;
+  logoMode: 'default' | 'custom' | 'none';
+  /** Omitted in list responses. */
+  logoData?: string;
+  signatureMode: 'default' | 'custom' | 'none';
+  /** Omitted in list responses. */
+  signatureData?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExperienceLetter {
+  _id: string;
+  employeeId: string | null;
+  employeeCode: string;
+  showEmployeeCode: boolean;
+  salutation: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  employeeName: string;
+  pronoun: 'he' | 'she' | 'they';
+  designation: string;
+  department: string;
+  joiningDate: string;
+  endDate: string;
+  issueDate: string;
+  rating: 'excellent' | 'very good' | 'good' | 'satisfactory';
+  remarks: string;
+  introText: string;
+  closingText: string;
+  signatoryName: string;
+  signatoryCompany: string;
+  signatoryDepartment: string;
+  signatoryTitle: string;
+  logoMode: 'default' | 'custom' | 'none';
+  /** Omitted in list responses. */
+  logoData?: string;
+  signatureMode: 'default' | 'custom' | 'none';
+  /** Omitted in list responses. */
+  signatureData?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppointmentLetter {
   _id: string;
   employeeId: Employee | string;
   offerDate: string;
+  interviewDate?: string | null;
   joiningDate: string;
   designation: string;
   department: string;
@@ -256,6 +395,9 @@ export interface AppointmentLetter {
   workLocation: string;
   probationPeriod: string;
   hrName: string;
+  salutation?: '' | 'Mr.' | 'Ms.' | 'Mrs.';
+  acceptanceDate?: string | null;
+  acceptancePlace?: string;
   customTerms: string;
   status: 'generated' | 'sent' | 'downloaded';
   createdAt: string;
@@ -594,6 +736,9 @@ export const adminApi = {
     apiFetch<ListResponse<PaySlip>>(
       `/api/admin/payslips${params ? `?${new URLSearchParams(params)}` : ''}`
     ),
+  /** One payslip with its full employee record populated (the list embeds only name/ID/designation). */
+  payslip: (id: string) =>
+    apiFetch<{ data: PaySlip }>(`/api/admin/payslips/${id}`),
   createPayslip: (data: Partial<PaySlip>) =>
     apiFetch<{ data: PaySlip }>('/api/admin/payslips', { method: 'POST', body: JSON.stringify(data) }),
   updatePayslip: (id: string, data: Partial<PaySlip>) =>
@@ -606,12 +751,67 @@ export const adminApi = {
     apiFetch<ListResponse<AppointmentLetter>>(
       `/api/admin/appointment-letters${params ? `?${new URLSearchParams(params)}` : ''}`
     ),
+  /** One letter with its full employee record populated (the list omits phone and other fields). */
+  appointmentLetter: (id: string) =>
+    apiFetch<{ data: AppointmentLetter }>(`/api/admin/appointment-letters/${id}`),
   createAppointmentLetter: (data: Partial<AppointmentLetter>) =>
     apiFetch<{ data: AppointmentLetter }>('/api/admin/appointment-letters', { method: 'POST', body: JSON.stringify(data) }),
   updateAppointmentLetter: (id: string, data: Partial<AppointmentLetter>) =>
     apiFetch<{ data: AppointmentLetter }>(`/api/admin/appointment-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAppointmentLetter: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/admin/appointment-letters/${id}`, { method: 'DELETE' }),
+
+  // ── Offer Letters ─────────────────────────────────────────────────────────
+  offerLetters: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<OfferLetter> & { facets: { departments: string[]; designations: string[] } }>(
+      `/api/admin/offer-letters${params ? `?${new URLSearchParams(params)}` : ''}`
+    ),
+  offerLetter: (id: string) =>
+    apiFetch<{ data: OfferLetter }>(`/api/admin/offer-letters/${id}`),
+  createOfferLetter: (data: Record<string, unknown>) =>
+    apiFetch<{ data: OfferLetter }>('/api/admin/offer-letters', { method: 'POST', body: JSON.stringify(data) }),
+  updateOfferLetter: (id: string, data: Record<string, unknown>) =>
+    apiFetch<{ data: OfferLetter }>(`/api/admin/offer-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  setOfferLetterStatus: (id: string, status: OfferLetter['status']) =>
+    apiFetch<{ data: OfferLetter }>(`/api/admin/offer-letters/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
+  deleteOfferLetter: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/offer-letters/${id}`, { method: 'DELETE' }),
+
+  // ── Internship Experience Letters ─────────────────────────────────────────
+  internshipLetters: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<InternshipLetter>>(`/api/admin/internship-letters${params ? `?${new URLSearchParams(params)}` : ''}`),
+  internshipLetter: (id: string) =>
+    apiFetch<{ data: InternshipLetter }>(`/api/admin/internship-letters/${id}`),
+  createInternshipLetter: (data: Record<string, unknown>) =>
+    apiFetch<{ data: InternshipLetter }>('/api/admin/internship-letters', { method: 'POST', body: JSON.stringify(data) }),
+  updateInternshipLetter: (id: string, data: Record<string, unknown>) =>
+    apiFetch<{ data: InternshipLetter }>(`/api/admin/internship-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteInternshipLetter: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/internship-letters/${id}`, { method: 'DELETE' }),
+
+  // ── Relieving Letters ─────────────────────────────────────────────────────
+  relievingLetters: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<RelievingLetter>>(`/api/admin/relieving-letters${params ? `?${new URLSearchParams(params)}` : ''}`),
+  relievingLetter: (id: string) =>
+    apiFetch<{ data: RelievingLetter }>(`/api/admin/relieving-letters/${id}`),
+  createRelievingLetter: (data: Record<string, unknown>) =>
+    apiFetch<{ data: RelievingLetter }>('/api/admin/relieving-letters', { method: 'POST', body: JSON.stringify(data) }),
+  updateRelievingLetter: (id: string, data: Record<string, unknown>) =>
+    apiFetch<{ data: RelievingLetter }>(`/api/admin/relieving-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteRelievingLetter: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/relieving-letters/${id}`, { method: 'DELETE' }),
+
+  // ── Experience Letters ────────────────────────────────────────────────────
+  experienceLetters: (params?: Record<string, string>) =>
+    apiFetch<ListResponse<ExperienceLetter>>(`/api/admin/experience-letters${params ? `?${new URLSearchParams(params)}` : ''}`),
+  experienceLetter: (id: string) =>
+    apiFetch<{ data: ExperienceLetter }>(`/api/admin/experience-letters/${id}`),
+  createExperienceLetter: (data: Record<string, unknown>) =>
+    apiFetch<{ data: ExperienceLetter }>('/api/admin/experience-letters', { method: 'POST', body: JSON.stringify(data) }),
+  updateExperienceLetter: (id: string, data: Record<string, unknown>) =>
+    apiFetch<{ data: ExperienceLetter }>(`/api/admin/experience-letters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteExperienceLetter: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/experience-letters/${id}`, { method: 'DELETE' }),
 
   // ── Active Resources ──────────────────────────────────────────────────────
   resources: (params?: Record<string, string>) =>

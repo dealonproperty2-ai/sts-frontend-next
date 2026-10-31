@@ -15,9 +15,10 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export async function GET(
   req: Request,
-  { params }: { params: { filename: string } }
+  { params: paramsPromise }: { params: Promise<{ filename: string }> }
 ) {
-  const auth = verifyAdmin(req);
+  const params = await paramsPromise;
+  const auth = await verifyAdmin(req);
   if ('error' in auth) return auth.error;
 
   // Sanitize — reject any path traversal attempts
